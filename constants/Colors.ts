@@ -1,19 +1,28 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Cineplanet App Colors - Colores oficiales de la marca Cineplanet
  */
 
-const tintColorLight = '#0a7ea4';
+const tintColorLight = '#1565C0'; // Azul Cineplanet más oscuro
 const tintColorDark = '#fff';
+const primaryBlue = '#1565C0'; // Azul principal de Cineplanet más oscuro
+const secondaryRed = '#E91E63'; // Rosa/Rojo de Cineplanet
 
 export const Colors = {
   light: {
     text: '#11181C',
-    background: '#fff',
+    background: '#FFFFFF', // Fondo blanco como la imagen 1
     tint: tintColorLight,
     icon: '#687076',
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
+    primary: primaryBlue,
+    secondary: secondaryRed,
+    inputBackground: 'transparent',
+    inputBorder: '#E0E0E0',
+    placeholder: '#9E9E9E',
+    link: primaryBlue,
+    buttonPrimary: primaryBlue,
+    buttonSecondary: secondaryRed,
   },
   dark: {
     text: '#ECEDEE',
@@ -22,5 +31,13 @@ export const Colors = {
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
+    primary: primaryBlue,
+    secondary: secondaryRed,
+    inputBackground: '#2A2A2A',
+    inputBorder: '#404040',
+    placeholder: '#9E9E9E',
+    link: '#64B5F6',
+    buttonPrimary: primaryBlue,
+    buttonSecondary: secondaryRed,
   },
 };

@@ -5,6 +5,21 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@/src/*": [
+        "./src/*"
+      ],
+      "@/types": [
+        "./src/types"
+      ],
+      "@/services/*": [
+        "./src/services/*"
+      ],
+      "@/utils": [
+        "./src/utils"
+      ],
+      "@/store/*": [
+        "./src/store/*"
       ]
     }
   },
@@ -12,6 +27,11 @@
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "expo-env.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
   ]
 }
