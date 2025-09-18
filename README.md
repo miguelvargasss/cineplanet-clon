@@ -2,35 +2,41 @@
 
 Este es un clon de la aplicación móvil de Cineplanet desarrollado con [Expo](https://expo.dev) y React Native. Una aplicación moderna y escalable que replica la experiencia de usuario de Cineplanet con arquitectura limpia y tecnologías de vanguardia.
 
-## �️ Stack Tecnológico
+## 🛠️ Stack Tecnológico
 
 ### Core Technologies
 
-- **React Native 0.79.5** - Framework para desarrollo móvil multiplataforma
-- **Expo SDK ~53.0.22** - Plataforma de desarrollo y despliegue
-- **TypeScript ~5.8.3** - Tipado estático para mayor robustez
-- **Expo Router ~5.1.5** - Navegación basada en archivos
+- **React Native 0.81.4** - Framework para desarrollo móvil multiplataforma
+- **Expo SDK 54.0.8** - Plataforma de desarrollo y despliegue (ACTUALIZADO)
+- **TypeScript ~5.9.2** - Tipado estático para mayor robustez
+- **Expo Router ~6.0.6** - Navegación basada en archivos
 
 ### UI & Animaciones
 
-- **React Native Reanimated ~3.17.4** - Animaciones de alto rendimiento
-- **React Native Gesture Handler ~2.24.0** - Manejo avanzado de gestos
-- **Expo Blur ~14.1.5** - Efectos de difuminado
-- **Expo Haptics ~14.1.4** - Retroalimentación háptica
-- **React Native Safe Area Context 5.4.0** - Manejo de áreas seguras
+- **React Native Reanimated ~4.1.0** - Animaciones de alto rendimiento (Nueva arquitectura)
+- **React Native Gesture Handler ~2.28.0** - Manejo avanzado de gestos
+- **Expo Blur ~15.0.7** - Efectos de difuminado
+- **Expo Haptics ~15.0.7** - Retroalimentación háptica
+- **React Native Safe Area Context ~5.6.0** - Manejo de áreas seguras
 
 ### Recursos y Assets
 
-- **@expo/vector-icons ^14.1.0** - Biblioteca completa de iconos
-- **Expo Font ~13.3.2** - Carga de fuentes personalizadas
-- **Expo Image ~2.4.0** - Componente optimizado de imágenes
-- **Expo Symbols ~0.4.5** - Iconos del sistema SF Symbols
+- **@expo/vector-icons ^15.0.2** - Biblioteca completa de iconos (6 familias disponibles)
+- **Expo Font ~14.0.8** - Carga de fuentes personalizadas
+- **Expo Image ~3.0.8** - Componente optimizado de imágenes
+- **Expo Symbols ~1.0.7** - Iconos del sistema SF Symbols
 
 ### Desarrollo y Calidad
 
 - **ESLint ^9.25.0** - Linter para calidad de código
-- **eslint-config-expo ~9.2.0** - Configuración ESLint para Expo
+- **eslint-config-expo ~10.0.0** - Configuración ESLint para Expo
 - **Babel Core ^7.25.2** - Transpilador JavaScript
+
+### Nuevas Dependencias (SDK 54)
+
+- **@expo/metro-runtime ~6.1.2** - Runtime optimizado para Metro
+- **React Native Worklets 0.5.1** - Soporte para worklets (Reanimated v4)
+- **React Native Web ^0.21.0** - Soporte web mejorado
 
 ## �🚀 Inicio Rápido
 
@@ -88,8 +94,9 @@ En la salida, encontrarás opciones para abrir la app en:
 │   ├── DateSelector.tsx             # Selector de fecha de nacimiento
 │   ├── CineplanetSelector.tsx       # Selector de cines favoritos
 │   └── ui/                          # 🎨 Componentes UI básicos
-│       ├── IconSymbol.tsx           # Sistema de iconos multiplataforma
-│       ├── IconSymbol.ios.tsx       # Iconos específicos para iOS
+│       ├── Icon.tsx                 # Sistema de iconos mejorado (@expo/vector-icons)
+│       ├── IconSymbol.tsx           # Sistema de iconos multiplataforma (legacy)
+│       ├── IconSymbol.ios.tsx       # Iconos específicos para iOS (legacy)
 │       └── Modal.tsx                # Modal básico reutilizable
 │
 ├── 💼 src/                          # LÓGICA DE NEGOCIO
@@ -164,6 +171,16 @@ En la salida, encontrarás opciones para abrir la app en:
 - **Validación de formularios** en tiempo real
 - **Gestión de estado global** con Context API
 - **Interfaz de películas** con navegación por tabs
+- **Sistema de iconos mejorado** con 6 familias disponibles
+- **SDK actualizado** a Expo 54 con mejor rendimiento
+
+### 🆕 Actualizaciones Recientes (Septiembre 2025):
+
+- ⬆️ **Expo SDK 53 → 54**: Actualización completa con mejor rendimiento
+- 🎨 **Sistema de iconos renovado**: 6 familias de @expo/vector-icons
+- ⚡ **React Native Reanimated v4**: Nueva arquitectura de animaciones
+- 🛠️ **Dependencias optimizadas**: Todas las librerías actualizadas
+- 📚 **Documentación mejorada**: Guías detalladas para iconos
 
 ### � En Desarrollo:
 
@@ -188,6 +205,29 @@ En la salida, encontrarás opciones para abrir la app en:
 - **Fuente Principal**: SpaceMono (Monoespaciada)
 - **Iconos**: @expo/vector-icons + SF Symbols
 - **Responsive**: Adaptable a diferentes tamaños de pantalla
+
+### 🎯 Sistema de Iconos Mejorado
+
+**Familias de Iconos Disponibles:**
+
+- **Ionicons** (`IIcon`) - Recomendado para UI general
+- **Material Icons** (`MIcon`) - Iconos de Material Design
+- **Font Awesome** (`FAIcon`) - Iconos populares y reconocibles
+- **Feather Icons** (`FeatherIcon`) - Minimalistas y elegantes
+- **Ant Design** (`AIcon`) - Iconos de Ant Design System
+- **Material Community** (`MCIcon`) - Extensión de Material Icons
+
+**Uso Simplificado:**
+
+```tsx
+import { IIcon, MIcon, FAIcon } from '@/components/ui/Icon';
+
+<IIcon name="home" size={24} color="#007AFF" />
+<MIcon name="person" size={20} color="#666" />
+<FAIcon name="heart" size={18} color="#FF3B30" />
+```
+
+**Documentación Completa:** Ver archivo `ICONOS.md` para guía detallada.
 
 ## 🛣️ Flujo de Usuario
 
@@ -308,11 +348,11 @@ expo install         # Instalar dependencias compatibles con Expo
 
 ```json
 {
-  "expo": "~53.0.22",
-  "react": "19.0.0",
-  "react-native": "0.79.5",
-  "expo-router": "~5.1.5",
-  "typescript": "~5.8.3"
+  "expo": "54.0.8",
+  "react": "19.1.0",
+  "react-native": "0.81.4",
+  "expo-router": "~6.0.6",
+  "typescript": "~5.9.2"
 }
 ```
 
@@ -320,11 +360,12 @@ expo install         # Instalar dependencias compatibles con Expo
 
 ```json
 {
-  "react-native-reanimated": "~3.17.4",
-  "react-native-gesture-handler": "~2.24.0",
-  "expo-blur": "~14.1.5",
-  "expo-haptics": "~14.1.4",
-  "@expo/vector-icons": "^14.1.0"
+  "react-native-reanimated": "~4.1.0",
+  "react-native-gesture-handler": "~2.28.0",
+  "react-native-worklets": "0.5.1",
+  "expo-blur": "~15.0.7",
+  "expo-haptics": "~15.0.7",
+  "@expo/vector-icons": "^15.0.2"
 }
 ```
 
@@ -333,9 +374,9 @@ expo install         # Instalar dependencias compatibles con Expo
 ```json
 {
   "eslint": "^9.25.0",
-  "eslint-config-expo": "~9.2.0",
+  "eslint-config-expo": "~10.0.0",
   "@babel/core": "^7.25.2",
-  "@types/react": "~19.0.10"
+  "@types/react": "~19.1.10"
 }
 ```
 
@@ -358,6 +399,8 @@ Este proyecto es una demostración de:
 - **UI/UX** profesional para aplicaciones móviles
 - **Navegación avanzada** con Expo Router
 - **Sistema de temas** dinámico
+- **Gestión de dependencias** y actualizaciones de SDK
+- **Sistema de iconos profesional** con múltiples familias
 
 ## 📞 Soporte y Contribuciones
 
@@ -368,5 +411,3 @@ Este proyecto es una demostración de:
 - 📧 **Email**: miguel.vargas@email.com
 
 ---
-
-⭐ **¡Dale una estrella si te gustó el proyecto!** ⭐
