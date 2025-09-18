@@ -4,6 +4,7 @@
     "slug": "cineplanet",
     "version": "1.0.0",
     "orientation": "portrait",
+    "sdkVersion": "54.0.0",
     "icon": "./assets/images/icon.png",
     "scheme": "cineplanet",
     "userInterfaceStyle": "automatic",
