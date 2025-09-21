@@ -2,9 +2,10 @@
  * Cineplanet App Colors - Colores oficiales de la marca Cineplanet
  */
 
-const tintColorLight = '#1565C0'; // Azul Cineplanet más oscuro
+const tintColorLight = '#1E3A8A'; // Azul Cineplanet oscuro como en la imagen
 const tintColorDark = '#fff';
-const primaryBlue = '#1565C0'; // Azul principal de Cineplanet más oscuro
+const primaryBlue = '#1E3A8A'; // Azul principal de Cineplanet oscuro
+const headerBlue = '#2563EB'; // Azul medio para headers
 const secondaryRed = '#E91E63'; // Rosa/Rojo de Cineplanet
 
 export const Colors = {
@@ -16,6 +17,7 @@ export const Colors = {
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
     primary: primaryBlue,
+    header: headerBlue, // Nuevo color para headers
     secondary: secondaryRed,
     inputBackground: 'transparent',
     inputBorder: '#E0E0E0',
@@ -32,6 +34,7 @@ export const Colors = {
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
     primary: primaryBlue,
+    header: headerBlue, // Nuevo color para headers
     secondary: secondaryRed,
     inputBackground: '#2A2A2A',
     inputBorder: '#404040',

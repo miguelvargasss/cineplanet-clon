@@ -2,61 +2,50 @@ import React from 'react';
 import { 
   View, 
   StyleSheet, 
-  Image, 
   ScrollView, 
   TouchableOpacity, 
   SafeAreaView,
-  Dimensions 
+  StatusBar
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { router } from 'expo-router';
-
-const { width } = Dimensions.get('window');
+import { Icon } from '@/components/ui/Icon';
 
 export default function MoviesScreen() {
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
-  const statusBarColor = '#1E40AF'; // Azul más oscuro para la barra de estado
-  const headerColor = '#3B82F6'; // Azul más claro para el header principal
+  const statusBarColor = '#051135ff'; // Azul muy oscuro para status bar (detalles del teléfono)
+  const headerColor = '#2f64baff'; // Azul más claro para header (separación visual)
   const insets = useSafeAreaInsets();
 
   const tabs = ['En Cartelera', 'Próximos Estrenos', 'BTS Week'];
   const [selectedTab, setSelectedTab] = React.useState(0);
 
-  const filterOptions = [
-    { icon: 'location.fill', label: 'Cajamarca' },
-    { icon: 'calendar', label: 'Fecha' },
-    { icon: 'line.3.horizontal', label: 'Opciones' },
-  ];
-
-  const handleBack = () => {
-    router.back();
-  };
-
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor }]}>
-      {/* Status Bar Simulation */}
-      <View style={[styles.statusBar, { backgroundColor: statusBarColor }]} />
+    <>
+      <StatusBar 
+        barStyle="light-content" 
+        backgroundColor={statusBarColor}
+        translucent={false}
+      />
+      <SafeAreaView style={[styles.container, { backgroundColor }]}>
+        {/* Status Bar Simulation */}
+        <View style={[styles.statusBar, { backgroundColor: statusBarColor }]} />
       
       {/* Header */}
       <View style={[styles.header, { backgroundColor: headerColor }]}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <ThemedText style={{ color: '#FFFFFF', fontSize: 20 }}>‹</ThemedText>
-        </TouchableOpacity>
-        
         <ThemedText style={styles.headerTitle}>Películas</ThemedText>
         
         <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.headerButton}>
-            <ThemedText style={{ color: '#FFFFFF', fontSize: 18 }}>🔍</ThemedText>
+          <TouchableOpacity style={styles.headerIconButton}>
+            <Icon family="Ionicons" name="search" size={20} color="#FFFFFF" />
           </TouchableOpacity>
-          <View style={styles.profileButton}>
+          <TouchableOpacity style={styles.profileButton}>
             <ThemedText style={styles.profileText}>MV</ThemedText>
-          </View>
-          <TouchableOpacity style={styles.headerButton}>
-            <ThemedText style={{ color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' }}>?</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.helpButton}>
+            <Icon family="Ionicons" name="help-circle" size={18} color="#3B82F6" />
           </TouchableOpacity>
         </View>
       </View>
@@ -75,7 +64,7 @@ export default function MoviesScreen() {
             <ThemedText 
               style={[
                 styles.tabText,
-                { color: selectedTab === index ? '#E50914' : textColor } // Rojo para tab activo
+                { color: selectedTab === index ? '#E53E3E' : '#666666' } // Rojo más intenso para tab activo
               ]}
             >
               {tab}
@@ -86,25 +75,36 @@ export default function MoviesScreen() {
 
       {/* Filter Options */}
       <View style={styles.filterContainer}>
-        {filterOptions.map((option, index) => (
-          <TouchableOpacity key={index} style={styles.filterButton}>
-            <ThemedText style={{ fontSize: 16 }}>
-              {index === 0 ? '📍' : index === 1 ? '📅' : '⚙️'}
-            </ThemedText>
-            <ThemedText style={[styles.filterText, { color: textColor }]}>
-              {option.label}
-            </ThemedText>
-          </TouchableOpacity>
-        ))}
+        <TouchableOpacity style={styles.filterButton}>
+          <Icon family="Ionicons" name="location" size={32} color="#3B82F6" />
+          <ThemedText style={[styles.filterText, { color: textColor }]}>
+            Ciudad
+          </ThemedText>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.filterButton}>
+          <Icon family="Ionicons" name="calendar" size={32} color="#3B82F6" />
+          <ThemedText style={[styles.filterText, { color: textColor }]}>
+            Fecha
+          </ThemedText>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.filterButton}>
+          <Icon family="Ionicons" name="funnel" size={32} color="#3B82F6" />
+          <ThemedText style={[styles.filterText, { color: textColor }]}>
+            Opciones
+          </ThemedText>
+        </TouchableOpacity>
       </View>
 
       {/* Movies Grid */}
       <ScrollView style={styles.moviesContainer} showsVerticalScrollIndicator={false}>
-        <Image 
-          source={require('@/assets/images/peliculas-cajamarca.jpg')}
-          style={styles.moviesImage}
-          resizeMode="cover"
-        />
+        {/* Aquí se mostrarán las películas dinámicamente */}
+        <View style={styles.emptyState}>
+          <ThemedText style={[styles.emptyText, { color: textColor }]}>
+            Próximamente aquí se mostrarán las películas disponibles
+          </ThemedText>
+        </View>
       </ScrollView>
 
       {/* Bottom Navigation - Navegación principal de la app */}
@@ -116,31 +116,32 @@ export default function MoviesScreen() {
         }
       ]}>
         <TouchableOpacity style={styles.navItem}>
-          <ThemedText style={{ fontSize: 20 }}>🏠</ThemedText>
+          <Icon family="Ionicons" name="home-outline" size={24} color="#999" />
           <ThemedText style={styles.navText}>Inicio</ThemedText>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.navItem}>
-          <ThemedText style={{ fontSize: 20 }}>🎬</ThemedText>
-          <ThemedText style={[styles.navText, { color: headerColor }]}>Películas</ThemedText>
+          <Icon family="Ionicons" name="videocam-outline" size={24} color="#2563EB" />
+          <ThemedText style={[styles.navText, { color: "#2563EB", fontWeight: '600' }]}>Películas</ThemedText>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.navItem}>
-          <ThemedText style={{ fontSize: 20 }}>🏢</ThemedText>
+          <Icon family="Ionicons" name="business-outline" size={24} color="#999" />
           <ThemedText style={styles.navText}>Cines</ThemedText>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.navItem}>
-          <ThemedText style={{ fontSize: 20 }}>🛍️</ThemedText>
+          <Icon family="Ionicons" name="bag-outline" size={24} color="#999" />
           <ThemedText style={styles.navText}>Dulcería</ThemedText>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.navItem}>
-          <ThemedText style={{ fontSize: 20 }}>⋯</ThemedText>
+          <Icon family="Ionicons" name="ellipsis-horizontal" size={24} color="#999" />
           <ThemedText style={styles.navText}>Más</ThemedText>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
+    </>
   );
 }
 
@@ -149,7 +150,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statusBar: {
-    height: 30,
+    height: 35, // Ajustar altura
     width: '100%',
   },
   header: {
@@ -157,100 +158,146 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  backButton: {
-    padding: 8,
+    paddingVertical: 10, // Ajustar padding
+    paddingTop: 10, // Ajustar padding top
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 20, // Aumentar ligeramente
     fontWeight: 'bold',
     color: '#FFFFFF',
     flex: 1,
-    textAlign: 'center',
-    marginHorizontal: 16,
+    textAlign: 'left',
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10, // Reducir gap
+  },
+  headerIconButton: {
+    width: 36, // Reducir tamaño
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerButton: {
-    padding: 8,
-  },
-  profileButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#1E3A8A', // Azul oscuro para contraste con header más claro
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  helpButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF', // Círculo blanco más pequeño
     alignItems: 'center',
     justifyContent: 'center',
   },
   profileText: {
-    color: '#3B82F6',
+    color: '#FFFFFF',
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 11, // Reducir para que se vea bien en círculo más pequeño
   },
   tabsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12, // Reducir padding vertical
+    paddingHorizontal: 16, // Reducir padding
+    paddingVertical: 8, // Reducir padding
+    backgroundColor: '#FFFFFF',
   },
   tab: {
-    marginRight: 32,
-    paddingBottom: 8,
+    marginRight: 24, // Reducir margen
+    paddingBottom: 6, // Reducir padding
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: '#E50914', // Mantenemos el rojo para el indicador de tab activo
+    borderBottomColor: '#E53E3E',
   },
   tabText: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 14, // Reducir tamaño
+    fontWeight: '600',
   },
   filterContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
     paddingHorizontal: 16,
-    paddingVertical: 8, // Reducir padding vertical
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    gap: 1, // Mínimo espacio entre rectángulos
   },
   filterButton: {
     alignItems: 'center',
+    justifyContent: 'center',
     flex: 1,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+    borderRadius: 0, // Sin esquinas redondeadas como en la imagen
+    backgroundColor: '#FFFFFF',
+    height: 80, // Altura fija para que se vean más rectangulares
   },
   filterText: {
-    marginTop: 4,
-    fontSize: 12,
+    marginTop: 8,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333333',
+    textAlign: 'center',
   },
   moviesContainer: {
     flex: 1,
     paddingHorizontal: 8, // Reducir padding para más espacio
   },
-  moviesImage: {
-    width: width - 16, // Casi todo el ancho de la pantalla
-    height: (width - 16) * 1.4, // Proporción más alta para mostrar más contenido
-    marginVertical: 8, // Menos margen vertical
-    borderRadius: 8, // Esquinas redondeadas como en el diseño
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 20,
+  },
+  emptyText: {
+    fontSize: 16,
+    textAlign: 'center',
+    color: '#666',
+    fontWeight: '500',
   },
   bottomNav: {
     flexDirection: 'row',
-    paddingVertical: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
+    justifyContent: 'space-around',
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderTopWidth: 0.5,
+    borderTopColor: '#E5E5E5',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 5,
   },
   navItem: {
-    flex: 1,
     alignItems: 'center',
-    paddingVertical: 4,
+    justifyContent: 'center',
+    paddingVertical: 6,
+    minWidth: 60,
   },
   navText: {
-    fontSize: 10,
+    fontSize: 11,
     marginTop: 4,
     color: '#999',
+    fontWeight: '400',
     textAlign: 'center',
   },
 });
