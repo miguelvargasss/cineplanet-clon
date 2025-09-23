@@ -15,8 +15,6 @@ Este es un clon de la aplicación móvil de Cineplanet desarrollado con [Expo](h
 
 - **React Native Reanimated ~4.1.0** - Animaciones de alto rendimiento (Nueva arquitectura)
 - **React Native Gesture Handler ~2.28.0** - Manejo avanzado de gestos
-- **Expo Blur ~15.0.7** - Efectos de difuminado
-- **Expo Haptics ~15.0.7** - Retroalimentación háptica
 - **React Native Safe Area Context ~5.6.0** - Manejo de áreas seguras
 
 ### Recursos y Assets

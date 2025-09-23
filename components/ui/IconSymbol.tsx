@@ -24,6 +24,15 @@ const MAPPING = {
   'eye': 'visibility',
   'eye.slash': 'visibility-off',
   'person.fill': 'person',
+  'mappin': 'location-on',
+  'calendar': 'event',
+  'ellipsis': 'more-horiz',
+  'magnifyingglass': 'search',
+  'house': 'home',
+  'play.rectangle': 'play-arrow',
+  'building.2': 'business',
+  'bag': 'shopping-bag',
+  'film': 'movie',
 } as IconMapping;
 
 /**

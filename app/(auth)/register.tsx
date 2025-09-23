@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { StyleSheet, ScrollView, View, TouchableOpacity } from 'react-native';
+import { StyleSheet, ScrollView, View, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedInput } from '@/components/ThemedInput';
 import { ThemedButton } from '@/components/ThemedButton';
-import { ThemedDropdown, type DropdownOption } from '@/components/ThemedDropdown';
+import { ThemedDropdown } from '@/components/ThemedDropdown';
 import { GenderSelector, type GenderOption } from '@/components/GenderSelector';
 import { DateSelector } from '@/components/DateSelector';
 import { ThemedCheckbox } from '@/components/ThemedCheckbox';
@@ -13,76 +13,12 @@ import { CineplanetSelector } from '@/components/CineplanetSelector';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { router } from 'expo-router';
+import { registerUser, getAuthErrorMessage, UserRegistrationData } from '../../src/services/authService';
+import { AuthError } from 'firebase/auth';
+import geographicalData from '../../src/data/geographical-data.json';
 
-// Datos para los dropdowns
-const documentTypes: DropdownOption[] = [
-  { label: 'DNI', value: 'dni' },
-  { label: 'Carnet de Extranjería', value: 'ce' },
-  { label: 'Pasaporte', value: 'passport' },
-];
-
-const departments: DropdownOption[] = [
-  { label: 'AMAZONAS', value: 'amazonas' },
-  { label: 'ANCASH', value: 'ancash' },
-  { label: 'APURIMAC', value: 'apurimac' },
-  { label: 'AREQUIPA', value: 'arequipa' },
-  { label: 'AYACUCHO', value: 'ayacucho' },
-  { label: 'CAJAMARCA', value: 'cajamarca' },
-  { label: 'CALLAO', value: 'callao' },
-  { label: 'CUSCO', value: 'cusco' },
-  { label: 'HUANCAVELICA', value: 'huancavelica' },
-  { label: 'HUANUCO', value: 'huanuco' },
-  { label: 'ICA', value: 'ica' },
-  { label: 'JUNIN', value: 'junin' },
-  { label: 'LA LIBERTAD', value: 'la_libertad' },
-  { label: 'LAMBAYEQUE', value: 'lambayeque' },
-  { label: 'LIMA', value: 'lima' },
-  { label: 'LORETO', value: 'loreto' },
-  { label: 'MADRE DE DIOS', value: 'madre_de_dios' },
-  { label: 'MOQUEGUA', value: 'moquegua' },
-  { label: 'PASCO', value: 'pasco' },
-  { label: 'PIURA', value: 'piura' },
-  { label: 'PUNO', value: 'puno' },
-  { label: 'SAN MARTIN', value: 'san_martin' },
-  { label: 'TACNA', value: 'tacna' },
-  { label: 'TUMBES', value: 'tumbes' },
-  { label: 'UCAYALI', value: 'ucayali' },
-];
-
-const provinces: DropdownOption[] = [
-  { label: 'CHACHAPOYAS', value: 'chachapoyas' },
-  { label: 'BAGUA', value: 'bagua' },
-  { label: 'BONGARÁ', value: 'bongara' },
-  { label: 'CONDORCANQUI', value: 'condorcanqui' },
-  { label: 'LUYA', value: 'luya' },
-  { label: 'RODRÍGUEZ DE MENDOZA', value: 'rodriguez_de_mendoza' },
-  { label: 'UTCUBAMBA', value: 'utcubamba' },
-];
-
-const districts: DropdownOption[] = [
-  { label: 'CHILLIQUIN', value: 'chilliquin' },
-  { label: 'CHACHAPOYAS', value: 'chachapoyas' },
-  { label: 'ASUNCION', value: 'asuncion' },
-  { label: 'BALSAS', value: 'balsas' },
-  { label: 'CHETO', value: 'cheto' },
-  { label: 'CHILIQUIN', value: 'chiliquin' },
-  { label: 'CHUQUIBAMBA', value: 'chuquibamba' },
-  { label: 'GRANADA', value: 'granada' },
-  { label: 'HUANCAS', value: 'huancas' },
-  { label: 'LA JALCA', value: 'la_jalca' },
-  { label: 'LEIMEBAMBA', value: 'leimebamba' },
-  { label: 'LEVANTO', value: 'levanto' },
-  { label: 'MAGDALENA', value: 'magdalena' },
-  { label: 'MARISCAL CASTILLA', value: 'mariscal_castilla' },
-  { label: 'MOLINOPAMPA', value: 'molinopampa' },
-  { label: 'MONTEVIDEO', value: 'montevideo' },
-  { label: 'OLLEROS', value: 'olleros' },
-  { label: 'QUINJALCA', value: 'quinjalca' },
-  { label: 'SAN FRANCISCO DE DAGUAS', value: 'san_francisco_de_daguas' },
-  { label: 'SAN ISIDRO DE MAINO', value: 'san_isidro_de_maino' },
-  { label: 'SOLOCO', value: 'soloco' },
-  { label: 'SONCHE', value: 'sonche' },
-];
+// Extraer datos de configuración geográfica
+const { documentTypes, departments, provinces, districts } = geographicalData;
 
 export default function RegisterScreen() {
   // Estados del formulario
@@ -104,45 +40,74 @@ export default function RegisterScreen() {
   const [showCineplanetSelector, setShowCineplanetSelector] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [acceptPrivacy, setAcceptPrivacy] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Colores del tema
   const backgroundColor = useThemeColor({}, 'background');
   const primaryColor = useThemeColor({}, 'primary');
   const linkColor = useThemeColor({}, 'link');
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     // Validar campos requeridos
     if (!firstName.trim() || !lastName.trim() || !email.trim() || !phone.trim() || 
-        !password.trim() || !documentNumber.trim() || !cvv.trim() || 
-        !documentType || !department || !province || !district || 
-        !gender || !birthDate || !selectedCineplanet || 
+        !password.trim() || !documentNumber.trim() || 
+        !documentType || !department || 
+        !gender || !birthDate || 
         !acceptTerms || !acceptPrivacy) {
-      console.log('Please fill in all required fields');
+      Alert.alert('Error', 'Por favor completa todos los campos requeridos');
       return;
     }
 
-    console.log('Register successful:', {
-      firstName,
-      lastName,
-      motherLastName,
-      email,
-      phone,
-      password,
-      documentType,
-      documentNumber,
-      cvv,
-      department,
-      province,
-      district,
-      gender,
-      birthDate,
-      selectedCineplanet,
-      acceptTerms,
-      acceptPrivacy,
-    });
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      Alert.alert('Error', 'Por favor ingresa un email válido');
+      return;
+    }
 
-    // Navegar a películas después de registro exitoso
-    router.replace('../movies');
+    if (password.length < 6) {
+      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const userData: UserRegistrationData = {
+        email: email.trim(),
+        password: password,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        documentType: documentType,
+        documentNumber: documentNumber.trim(),
+        phoneNumber: phone.trim(),
+        birthDate: birthDate,
+        gender: gender || 'other',
+        department: department,
+        acceptTerms: acceptTerms,
+        acceptPromotions: acceptPrivacy,
+        cineplanetNumber: selectedCineplanet || undefined,
+      };
+
+      await registerUser(userData);
+      
+      Alert.alert(
+        'Registro exitoso',
+        '¡Tu cuenta ha sido creada exitosamente!',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.replace('../movies'),
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Registration error:', error);
+      const errorMessage = getAuthErrorMessage(error as AuthError);
+      Alert.alert('Error de registro', errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSelectCineplanet = () => {
@@ -393,9 +358,10 @@ export default function RegisterScreen() {
 
           {/* Botón de registro */}
           <ThemedButton
-            title="Unirme"
+            title={loading ? "Registrando..." : "Unirme"}
             variant="secondary"
             onPress={handleRegister}
+            disabled={loading}
             style={styles.registerButton}
           />
         </ThemedView>

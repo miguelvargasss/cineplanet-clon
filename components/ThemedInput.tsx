@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { StyleSheet, TextInput, View, TouchableOpacity, type TextInputProps } from 'react-native';
-import { IIcon } from '@/components/ui/Icon';
+import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
 export type ThemedInputProps = TextInputProps & {
   lightColor?: string;
   darkColor?: string;
   isPassword?: boolean;
-  icon?: string; // Cambiado a string para iconos de Ionicons
+  icon?: string; // Iconos SF Symbols
   placeholder?: string;
 };
 
@@ -38,8 +38,8 @@ export function ThemedInput({
   return (
     <View style={[styles.container, { borderBottomColor: currentBorderColor }]}>
       {icon && (
-        <IIcon 
-          name={icon} 
+        <IconSymbol 
+          name={icon as any} 
           size={20} 
           color={iconColor} 
           style={styles.icon} 
@@ -62,8 +62,8 @@ export function ThemedInput({
       
       {isPassword && (
         <TouchableOpacity onPress={togglePasswordVisibility} style={styles.eyeIcon}>
-          <IIcon
-            name={isPasswordVisible ? 'eye-off' : 'eye'}
+          <IconSymbol
+            name={isPasswordVisible ? 'eye.slash' : 'eye'}
             size={20}
             color={iconColor}
           />

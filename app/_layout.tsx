@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
 import 'react-native-reanimated';
+import { AuthProvider } from '../src/contexts/AuthContext';
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -15,7 +16,7 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <AuthProvider>
       <Stack
         screenOptions={{
           headerShown: false,
@@ -27,6 +28,6 @@ export default function RootLayout() {
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />
-    </>
+    </AuthProvider>
   );
 }

@@ -23,21 +23,6 @@ export interface AuthState {
   isLoading: boolean;
 }
 
-// Tipos de películas
-export interface Movie {
-  id: string;
-  title: string;
-  genre: string;
-  duration: number; // en minutos
-  rating: string;
-  poster: string;
-  trailer?: string;
-  synopsis: string;
-  releaseDate: string;
-  isInTheaters: boolean;
-  isComingSoon: boolean;
-}
-
 // Tipos de cines
 export interface Cinema {
   id: string;

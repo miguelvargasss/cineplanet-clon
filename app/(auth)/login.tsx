@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, ScrollView, View, TouchableOpacity } from 'react-native';
+import { StyleSheet, ScrollView, View, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -8,23 +8,42 @@ import { ThemedButton } from '@/components/ThemedButton';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { router } from 'expo-router';
+import { loginWithDNI, getAuthErrorMessage } from '../../src/services/authService';
+import { AuthError } from 'firebase/auth';
 
 export default function LoginScreen() {
-  const [memberNumber, setMemberNumber] = useState('');
+  const [dni, setDni] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   
   const backgroundColor = useThemeColor({}, 'background');
   const primaryColor = useThemeColor({}, 'primary');
   const linkColor = useThemeColor({}, 'link');
   const darkBlue = '#0D47A1'; // Azul más oscuro para el título
 
-  const handleLogin = () => {
-    // Validar campos y navegar a películas
-    if (memberNumber.trim() && password.trim()) {
-      console.log('Login successful:', { memberNumber, password });
+  const handleLogin = async () => {
+    if (!dni.trim() || !password.trim()) {
+      Alert.alert('Error', 'Por favor ingresa tu DNI y contraseña');
+      return;
+    }
+
+    // Validar formato de DNI (8 dígitos)
+    if (dni.trim().length !== 8 || !/^\d+$/.test(dni.trim())) {
+      Alert.alert('Error', 'El DNI debe tener exactamente 8 dígitos');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await loginWithDNI(dni.trim(), password);
       router.replace('../movies');
-    } else {
-      console.log('Please fill in all fields');
+    } catch (error) {
+      console.error('Login error:', error);
+      const errorMessage = getAuthErrorMessage(error as AuthError);
+      Alert.alert('Error de inicio de sesión', errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -59,9 +78,10 @@ export default function LoginScreen() {
           <View style={styles.inputContainer}>
             <ThemedInput
               placeholder="N° de Socio Cineplanet"
-              value={memberNumber}
-              onChangeText={setMemberNumber}
+              value={dni}
+              onChangeText={setDni}
               keyboardType="numeric"
+              maxLength={8}
               style={styles.input}
             />
           </View>
@@ -88,9 +108,10 @@ export default function LoginScreen() {
 
           {/* Botón de Ingresar */}
           <ThemedButton
-            title="Ingresar"
+            title={loading ? "Ingresando..." : "Ingresar"}
             variant="primary"
             onPress={handleLogin}
+            disabled={loading}
             style={styles.loginButton}
           />
         </ThemedView>

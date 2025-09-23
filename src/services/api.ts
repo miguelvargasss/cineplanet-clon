@@ -1,6 +1,7 @@
 // 🌐 SERVICIOS DE API PARA CINEPLANET
 
-import { ApiResponse, User, Movie, Cinema, Showtime, LoginForm, RegisterForm } from '../types';
+import { ApiResponse, User, Cinema, Showtime, LoginForm, RegisterForm } from '../types';
+import { Movie } from './moviesService';
 
 // Configuración base de la API
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.cineplanet.pe';
@@ -160,14 +161,20 @@ export const mockData = {
     {
       id: '1',
       title: 'Avatar: El Camino del Agua',
-      genre: 'Ciencia Ficción',
+      description: 'Jake Sully vive con su nueva familia en el planeta Pandora...',
+      genre: ['Ciencia Ficción', 'Aventura'],
       duration: 192,
+      releaseDate: new Date('2023-12-15'),
+      posterUrl: 'https://via.placeholder.com/300x450',
+      director: 'James Cameron',
+      cast: ['Sam Worthington', 'Zoe Saldana'],
       rating: 'PG-13',
-      poster: 'https://via.placeholder.com/300x450',
-      synopsis: 'Jake Sully vive con su nueva familia en el planeta Pandora...',
-      releaseDate: '2023-12-15',
-      isInTheaters: true,
+      language: 'Inglés',
+      subtitle: 'Subtítulos en español',
+      isNowPlaying: true,
       isComingSoon: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
     // Agregar más películas mock aquí
   ] as Movie[],

@@ -14,8 +14,6 @@
 - **React Native Reanimated ~3.17.4** - Animaciones de alto rendimiento
 - **React Native Gesture Handler ~2.24.0** - Gestos avanzados
 - **React Native Safe Area Context 5.4.0** - Manejo de áreas seguras
-- **Expo Blur ~14.1.5** - Efectos de difuminado modernos
-- **Expo Haptics ~14.1.4** - Retroalimentación táctil
 
 ### 📦 Recursos y Assets
 

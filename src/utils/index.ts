@@ -95,34 +95,36 @@ export const debounce = <T extends (...args: any[]) => any>(
 export const storage = {
   setItem: async (key: string, value: any): Promise<void> => {
     try {
-      // Implementación básica - podrías usar AsyncStorage o SecureStore
-      console.log(`Setting ${key}:`, value);
-      // await AsyncStorage.setItem(key, JSON.stringify(value));
+      // TODO: Implementar con AsyncStorage o SecureStore
+      console.log(`Would save ${key}:`, value);
     } catch (error) {
       console.error('Error saving to storage:', error);
     }
   },
   
   getItem: async <T>(key: string): Promise<T | null> => {
-    try {
-      // Implementación básica - podrías usar AsyncStorage o SecureStore
-      console.log(`Getting ${key}`);
-      // const value = await AsyncStorage.getItem(key);
-      // return value ? JSON.parse(value) : null;
-      return null;
-    } catch (error) {
-      console.error('Error reading from storage:', error);
-      return null;
-    }
+    // TODO: Implementar con AsyncStorage o SecureStore
+    console.log(`Would get ${key}`);
+    return null;
   },
   
   removeItem: async (key: string): Promise<void> => {
     try {
-      // Implementación básica - podrías usar AsyncStorage o SecureStore
-      console.log(`Removing ${key}`);
-      // await AsyncStorage.removeItem(key);
+      // TODO: Implementar con AsyncStorage o SecureStore
+      console.log(`Would remove ${key}`);
     } catch (error) {
       console.error('Error removing from storage:', error);
     }
+  }
+};
+
+// Función para agregar ParaNorman a la base de datos
+export const addParaNormanToDatabase = async (): Promise<void> => {
+  try {
+    const { addParaNormanMovie } = await import('../services/moviesService');
+    await addParaNormanMovie();
+    console.log('✅ ParaNorman agregada exitosamente a Próximos Estrenos');
+  } catch (error) {
+    console.error('❌ Error agregando ParaNorman:', error);
   }
 };
