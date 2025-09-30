@@ -1,7 +1,4 @@
-// Instrucciones para poblar Firebase con datos de ejemplo
-// Ejecuta este código en la consola del navegador cuando tengas Firebase abierto
 
-// Primero, ve a Firebase Console > Firestore Database > y ejecuta este código en la consola del navegador
 
 const movies = [
   {
