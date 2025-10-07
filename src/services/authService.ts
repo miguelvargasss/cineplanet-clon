@@ -22,6 +22,7 @@ export interface UserData {
   acceptTerms?: boolean; // Solo para registro
   acceptPromotions: boolean;
   cineplanetNumber?: string;
+  cinemaId?: string; // Cine asociado al usuario
   // Campos adicionales para el perfil guardado
   uid?: string;
   createdAt?: Date;
@@ -187,6 +188,7 @@ export const registerUser = async (userData: UserRegistrationData): Promise<User
       department: userData.department,
       acceptPromotions: userData.acceptPromotions,
       cineplanetNumber: userData.cineplanetNumber,
+      cinemaId: userData.cinemaId || 'cp-alcazar', // Cine por defecto
       createdAt: new Date(),
       lastLogin: new Date()
     };

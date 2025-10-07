@@ -6,11 +6,13 @@ import {
   addDoc, 
   updateDoc, 
   deleteDoc, 
+  setDoc,
   query, 
   orderBy, 
   Timestamp 
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { MovieSchedule, Showtime } from '../types';
 
 export interface Movie {
   id?: string;
@@ -29,6 +31,7 @@ export interface Movie {
   isNowPlaying: boolean;
   isComingSoon: boolean;
   isBTSWeek?: boolean;
+  schedules?: MovieSchedule[]; // Horarios por cine
   createdAt: Date;
   updatedAt: Date;
 }
@@ -275,58 +278,35 @@ export const seedSampleMovies = async (category: 'nowPlaying' | 'comingSoon' | '
   }
 };
 
-// Función para agregar RE: ParaNorman a Próximos Estrenos
-export const addParaNormanMovie = async (): Promise<void> => {
+// Función para verificar y agregar películas automáticamente
+export const ensureMoviesExist = async (): Promise<void> => {
   try {
-    console.log('Agregando película "RE: ParaNorman" a Próximos Estrenos...');
+    // Verificar si hay películas en "En Cartelera"
+    const moviesRef = collection(db, 'movies');
+    const moviesSnapshot = await getDocs(moviesRef);
     
-    const paraNormanMovie = {
-      title: 'RE: ParaNorman',
-      description: 'ParaNorman: Una historia de fantasmas, brujas y una maldición vuelve a los cines este Halloween: ¡más grande, más audaz y más aterradora que nunca! De los creadores de Coraline, este clásico favorito de los fanáticos regresa en una espectacular remasterización en formatos 3D y 2D, acompañado por un nuevo cortometraje animado, The Thrifting, con Anna Kendrick como Courtney y la presentación de un nuevo personaje en la voz de Finn Wolfhard.',
-      genre: ['Familiar', 'Animación', 'Terror'],
-      duration: 104, // 1h 44min
-      releaseDate: new Date('2025-10-31'), // Halloween 2025
-      posterUrl: 'https://th.bing.com/th/id/R.e5ac7db6233f64ff1a5590c066c81842?rik=Tuauz4tmThgRoQ&pid=ImgRaw&r=0',
-      director: 'Chris Butler, Sam Fell',
-      cast: ['Kodi Smit-McPhee', 'Anna Kendrick', 'Christopher Mintz-Plasse', 'Tucker Albrizzi'],
-      rating: 'APT',
-      language: 'Doblada',
-      subtitle: 'Subtítulos en español',
-    };
-
-    await addSingleMovie(paraNormanMovie, 'comingSoon');
-    console.log('Película "RE: ParaNorman" agregada exitosamente a Próximos Estrenos');
+    // Verificar si hay películas en "Próximos Estrenos"
+    const comingSoonRef = collection(db, 'moviesEstreno');
+    const comingSoonSnapshot = await getDocs(comingSoonRef);
     
+    // Si no hay películas en ninguna de las dos colecciones principales, agregar todas
+    if (moviesSnapshot.empty && comingSoonSnapshot.empty) {
+      console.log('No hay películas en ninguna colección, agregando películas de ejemplo...');
+      const { addSampleMovies } = await import('../../scripts/addSampleMovies');
+      await addSampleMovies();
+    } else {
+      console.log(`${moviesSnapshot.size} película(s) en "En Cartelera"`);
+      console.log(`${comingSoonSnapshot.size} película(s) en "Próximos Estrenos"`);
+      
+      // Si falta Chainsaw Man en próximos estrenos, agregarla
+      if (comingSoonSnapshot.empty) {
+        console.log('Agregando películas de próximos estrenos...');
+        const { addComingSoonMovies } = await import('../../scripts/addSampleMovies');
+        await addComingSoonMovies();
+      }
+    }
   } catch (error) {
-    console.error('Error agregando película "RE: ParaNorman":', error);
-    throw error;
-  }
-};
-
-// Función para agregar BTS 2016 HYYH On Stage: Epilogue Remastered a BTS Week
-export const addBTSMovie = async (): Promise<void> => {
-  try {
-    console.log('Agregando película "BTS 2016 HYYH On Stage: Epilogue Remastered" a BTS Week...');
-    
-    const btsMovie = {
-      title: 'BTS 2016 HYYH On Stage: Epilogue Remastered',
-      description: '#1 BTS 2016 Live The Most Beautiful Moment in Life On Stage: Epilogue Remastered. El gran final de la serie "The Most Beautiful Moment in Life" de BTS, donde la historia de la juventud brilla con más fuerza: <BTS 2016 Live The Most Beautiful Moment in Life On Stage: Epilogue Remastered>. Desde la emotividad de "Autumn Leaves" y "Butterfly" hasta las explosivas actuaciones de "FIRE", "Save ME" y "EPILOGUE: Young Forever", ¡la historia de la juventud que definió a BTS tal y como lo conocemos hoy, cobra vida en la pantalla!',
-      genre: ['Concierto', 'Musical', 'K-Pop'],
-      duration: 103, // 1h 43min
-      releaseDate: new Date('2025-11-15'), // Noviembre 2025
-      posterUrl: 'https://tse2.mm.bing.net/th/id/OIP.K3c-fFemrJrS5d1n5gzWIwHaNL?rs=1&pid=ImgDetMain&o=7&rm=3',
-      director: 'Big Hit Entertainment',
-      cast: ['RM', 'Jin', 'Suga', 'J-Hope', 'Jimin', 'V', 'Jungkook'],
-      rating: '+14',
-      language: 'Subtitulada',
-      subtitle: 'Subtítulos en español',
-    };
-
-    await addSingleMovie(btsMovie, 'btsWeek');
-    console.log('Película "BTS 2016 HYYH On Stage: Epilogue Remastered" agregada exitosamente a BTS Week');
-    
-  } catch (error) {
-    console.error('Error agregando película "BTS 2016 HYYH On Stage: Epilogue Remastered":', error);
-    throw error;
+    console.error('Error verificando películas:', error);
+    // No lanzar error para no afectar la carga de otras películas
   }
 };

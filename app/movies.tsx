@@ -15,7 +15,7 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { MovieCard } from '@/components/MovieCard';
 import { useAuth } from '@/src/contexts/AuthContext';
-import { Movie, getMoviesByCategory, addParaNormanMovie, addBTSMovie } from '@/src/services/moviesService';
+import { Movie, getMoviesByCategory, ensureMoviesExist } from '@/src/services/moviesService';
 import { logoutUser } from '@/src/services/authService';
 import { router } from 'expo-router';
 import { ProtectedRoute } from '@/src/components/ProtectedRoute';
@@ -43,15 +43,21 @@ export default function MoviesScreen() {
       switch (selectedTab) {
         case 0:
           category = 'nowPlaying';
+          // Agregar películas automáticamente al cargar "En Cartelera"
+          await ensureMoviesExist();
           break;
         case 1:
           category = 'comingSoon';
+          // Verificar y agregar películas automáticamente en "Próximos Estrenos"
+          await ensureMoviesExist();
           break;
         case 2:
           category = 'btsWeek';
           break;
         default:
           category = 'nowPlaying';
+          // Agregar películas automáticamente por defecto
+          await ensureMoviesExist();
       }
       
       const moviesData = await getMoviesByCategory(category);
@@ -70,24 +76,12 @@ export default function MoviesScreen() {
   const handleRefresh = async () => {
     setRefreshing(true);
     
-    // Agregar ParaNorman si estamos en la pestaña de Próximos Estrenos
-    if (selectedTab === 1) {
-      try {
-        await addParaNormanMovie();
-        console.log('ParaNorman agregada exitosamente');
-      } catch (error) {
-        console.log('ParaNorman ya existe o error al agregar:', error);
-      }
-    }
-    
-    // Agregar película BTS si estamos en la pestaña BTS Week
-    if (selectedTab === 2) {
-      try {
-        await addBTSMovie();
-        console.log('BTS Movie agregada exitosamente');
-      } catch (error) {
-        console.log('BTS Movie ya existe o error al agregar:', error);
-      }
+    // Agregar películas automáticamente en cualquier pestaña
+    try {
+      await ensureMoviesExist();
+      console.log('Películas verificadas/agregadas exitosamente');
+    } catch (error) {
+      console.log('Las películas ya existen o error al agregar:', error);
     }
     
     await loadMovies();

@@ -118,13 +118,4 @@ export const storage = {
   }
 };
 
-// Función para agregar ParaNorman a la base de datos
-export const addParaNormanToDatabase = async (): Promise<void> => {
-  try {
-    const { addParaNormanMovie } = await import('../services/moviesService');
-    await addParaNormanMovie();
-    console.log('✅ ParaNorman agregada exitosamente a Próximos Estrenos');
-  } catch (error) {
-    console.error('❌ Error agregando ParaNorman:', error);
-  }
-};
+

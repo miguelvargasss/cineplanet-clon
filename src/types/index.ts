@@ -13,6 +13,7 @@ export interface User {
   birthDate: string;
   gender: 'M' | 'F' | 'O';
   selectedCineplanet: string;
+  cinemaId?: string; // Cine asociado al usuario
   acceptsTerms: boolean;
   acceptsPromotions: boolean;
 }
@@ -47,6 +48,26 @@ export interface Showtime {
   availableSeats: number;
   totalSeats: number;
   price: number;
+}
+
+// Tipos para horarios de películas
+export interface MovieSchedule {
+  cinemaId: string;
+  cinemaName: string;
+  showtimes: Showtime[];
+}
+
+// Tipos para compra de entradas
+export interface TicketPurchase {
+  id?: string;
+  userId: string;
+  movieId: string;
+  showtimeId: string;
+  cinemaId: string;
+  seats: string[];
+  totalPrice: number;
+  purchaseDate: Date;
+  status: 'pending' | 'confirmed' | 'cancelled';
 }
 
 // Tipos de formularios

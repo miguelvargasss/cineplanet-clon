@@ -7,7 +7,8 @@ import {
   Dimensions,
   TouchableOpacity,
   ActivityIndicator,
-  StatusBar
+  StatusBar,
+  Alert
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -16,6 +17,13 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Movie, getMovieById } from '@/src/services/moviesService';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { MovieSchedule, Showtime } from '@/src/types';
+import { getMovieSchedules, getMovieScheduleForCinema, createTicketPurchase } from '@/src/services/ticketService';
+import FilterBar from '@/components/FilterBar';
+import CityFilterModal from '@/components/CityFilterModal';
+import CinemaFilterModal from '@/components/CinemaFilterModal';
+import DateFilterModal from '@/components/DateFilterModal';
+import CinemaSchedule from '@/components/CinemaSchedule';
 
 const { height } = Dimensions.get('window');
 
@@ -29,7 +37,20 @@ export default function MovieDetailsScreen() {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedTab, setSelectedTab] = useState<'comprar' | 'detalle'>('detalle'); // Tab por defecto
+  const [selectedTab, setSelectedTab] = useState<'comprar' | 'detalle'>('detalle');
+  
+  // Estados para la compra
+  const [selectedCity, setSelectedCity] = useState('Lima');
+  const [selectedCinema, setSelectedCinema] = useState('cp-alcazar');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [movieSchedules, setMovieSchedules] = useState<MovieSchedule[]>([]);
+  const [userCinemaSchedule, setUserCinemaSchedule] = useState<MovieSchedule | null>(null);
+  const [loadingSchedules, setLoadingSchedules] = useState(false);
+  
+  // Estados para los modales
+  const [showCityModal, setShowCityModal] = useState(false);
+  const [showCinemaModal, setShowCinemaModal] = useState(false);
+  const [showDateModal, setShowDateModal] = useState(false);
 
   // Colores del header similar a movies.tsx
   const statusBarColor = '#051135ff'; // Azul muy oscuro para status bar
@@ -45,6 +66,10 @@ export default function MovieDetailsScreen() {
         const movieData = await getMovieById(movieId);
         if (movieData) {
           setMovie(movieData);
+          // Cargar horarios cuando se cambie a la pestaña de comprar
+          if (selectedTab === 'comprar') {
+            await loadSchedules(movieId);
+          }
         } else {
           setError('Película no encontrada');
         }
@@ -57,11 +82,92 @@ export default function MovieDetailsScreen() {
     } finally {
       setLoading(false);
     }
-  }, [params.id]);
+  }, [params.id, selectedTab]);
+
+  const loadSchedules = useCallback(async (movieId: string) => {
+    try {
+      setLoadingSchedules(true);
+      
+      // Cargar todos los horarios
+      const schedules = await getMovieSchedules(movieId);
+      setMovieSchedules(schedules);
+      
+      // Usar el cine seleccionado por el usuario
+      const userSchedule = await getMovieScheduleForCinema(movieId, selectedCinema);
+      setUserCinemaSchedule(userSchedule);
+    } catch (err) {
+      console.error('Error loading schedules:', err);
+    } finally {
+      setLoadingSchedules(false);
+    }
+  }, [selectedCinema]);
+
+  const handleShowtimeSelect = async (showtime: Showtime) => {
+    if (!user) {
+      Alert.alert(
+        'Iniciar Sesión',
+        'Debes iniciar sesión para comprar entradas',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Iniciar Sesión', onPress: () => router.push('/(auth)/login') }
+        ]
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Confirmar Compra',
+      `¿Deseas comprar entradas para la función de ${showtime.time}?\n\nPrecio: S/. ${showtime.price.toFixed(2)}`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Comprar', 
+          onPress: async () => {
+            try {
+              await createTicketPurchase({
+                userId: user.uid,
+                movieId: movie!.id!,
+                showtimeId: showtime.id,
+                cinemaId: showtime.cinemaId,
+                seats: ['A1'], // Por simplicidad, asignamos un asiento automáticamente
+                totalPrice: showtime.price
+              });
+              
+              Alert.alert(
+                '¡Compra Exitosa!',
+                'Tu entrada ha sido reservada exitosamente.',
+                [{ text: 'OK' }]
+              );
+            } catch (error) {
+              Alert.alert(
+                'Error',
+                'No se pudo procesar la compra. Inténtalo de nuevo.',
+                [{ text: 'OK' }]
+              );
+            }
+          }
+        }
+      ]
+    );
+  };
 
   useEffect(() => {
     loadMovie();
   }, [loadMovie]);
+
+  // Cargar horarios cuando se cambie a la pestaña de comprar
+  useEffect(() => {
+    if (selectedTab === 'comprar' && movie?.id) {
+      loadSchedules(movie.id);
+    }
+  }, [selectedTab, movie?.id, loadSchedules]);
+
+  // Recargar horarios cuando cambie el cine seleccionado
+  useEffect(() => {
+    if (selectedTab === 'comprar' && movie?.id) {
+      loadSchedules(movie.id);
+    }
+  }, [selectedCinema, selectedTab, movie?.id, loadSchedules]);
 
   const formatDuration = (minutes: number): string => {
     const hours = Math.floor(minutes / 60);
@@ -264,10 +370,65 @@ export default function MovieDetailsScreen() {
             <View style={styles.bottomSpacer} />
             </View>
           ) : (
-            <View style={styles.detailsContainer}>
-              <ThemedText style={[styles.sectionTitle, { textAlign: 'center', marginTop: 40 }]}>
-                Función de compra próximamente
-              </ThemedText>
+            <View style={styles.purchaseContainer}>
+              {loadingSchedules ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#E53E3E" />
+                  <ThemedText style={[styles.loadingText, { color: textColor }]}>
+                    Cargando horarios...
+                  </ThemedText>
+                </View>
+              ) : (
+                <>
+                  {/* Barra de filtros */}
+                  <FilterBar
+                    selectedCity={selectedCity}
+                    selectedCinema={selectedCinema}
+                    selectedDate={selectedDate}
+                    onCityPress={() => setShowCityModal(true)}
+                    onCinemaPress={() => setShowCinemaModal(true)}
+                    onDatePress={() => setShowDateModal(true)}
+                  />
+
+                  {/* Horarios del cine seleccionado */}
+                  {userCinemaSchedule ? (
+                    <CinemaSchedule
+                      schedule={userCinemaSchedule}
+                      isUserCinema={true}
+                      onShowtimeSelect={handleShowtimeSelect}
+                    />
+                  ) : (
+                    <View style={styles.noCinemaContainer}>
+                      <ThemedText style={[styles.noCinemaText, { color: textColor }]}>
+                        No hay horarios disponibles para esta película en el cine seleccionado.
+                      </ThemedText>
+                    </View>
+                  )}
+
+                  {/* Modales de filtro */}
+                  <CityFilterModal
+                    visible={showCityModal}
+                    selectedCity={selectedCity}
+                    onSelectCity={setSelectedCity}
+                    onClose={() => setShowCityModal(false)}
+                  />
+
+                  <CinemaFilterModal
+                    visible={showCinemaModal}
+                    selectedCinema={selectedCinema}
+                    onSelectCinema={setSelectedCinema}
+                    onClose={() => setShowCinemaModal(false)}
+                  />
+
+                  <DateFilterModal
+                    visible={showDateModal}
+                    selectedDate={selectedDate}
+                    onSelectDate={setSelectedDate}
+                    onClose={() => setShowDateModal(false)}
+                  />
+                </>
+              )}
+              
               <View style={styles.bottomSpacer} />
             </View>
           )}
@@ -545,5 +706,20 @@ const styles = StyleSheet.create({
   },
   inactiveTabText: {
     color: '#999999',
+  },
+  purchaseContainer: {
+    paddingHorizontal: 0,
+  },
+  noCinemaContainer: {
+    margin: 20,
+    padding: 20,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  noCinemaText: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 22,
   },
 });
