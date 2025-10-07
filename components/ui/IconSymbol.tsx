@@ -33,6 +33,15 @@ const MAPPING = {
   'building.2': 'business',
   'bag': 'shopping-bag',
   'film': 'movie',
+  'chair': 'chair',
+  'ticket': 'confirmation-number',
+  'cup.and.saucer': 'local-cafe',
+  'creditcard': 'credit-card',
+  'clock': 'access-time',
+  'wheelchair': 'accessible',
+  'play.fill': 'play-arrow',
+  'camera': 'camera-alt',
+  'cart': 'shopping-cart',
 } as IconMapping;
 
 /**

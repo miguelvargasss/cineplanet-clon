@@ -56,8 +56,10 @@ export default function FilterBar({
     <View style={styles.container}>
       {/* Ciudad */}
       <TouchableOpacity style={styles.filterButton} onPress={onCityPress}>
-        <IconSymbol name="mappin" size={20} color="#666666" />
-        <ThemedText style={styles.filterLabel}>Ciudad</ThemedText>
+        <IconSymbol name="mappin" size={20} color="#3B82F6" />
+        <ThemedText style={styles.filterLabel}>
+          {selectedCity}
+        </ThemedText>
       </TouchableOpacity>
 
       {/* Separador */}
@@ -65,8 +67,10 @@ export default function FilterBar({
 
       {/* Cine */}
       <TouchableOpacity style={styles.filterButton} onPress={onCinemaPress}>
-        <IconSymbol name="building.2" size={20} color="#666666" />
-        <ThemedText style={styles.filterLabel}>Cine</ThemedText>
+        <IconSymbol name="camera" size={20} color="#3B82F6" />
+        <ThemedText style={styles.filterLabel}>
+          {formatCinemaDisplay(selectedCinema)}
+        </ThemedText>
       </TouchableOpacity>
 
       {/* Separador */}
@@ -74,7 +78,7 @@ export default function FilterBar({
 
       {/* Fecha */}
       <TouchableOpacity style={styles.filterButton} onPress={onDatePress}>
-        <IconSymbol name="calendar" size={20} color="#666666" />
+        <IconSymbol name="calendar" size={20} color="#3B82F6" />
         <ThemedText style={styles.filterLabel}>
           {formatDateDisplay(selectedDate)}
         </ThemedText>
@@ -94,7 +98,7 @@ const styles = StyleSheet.create({
   },
   filterButton: {
     flex: 1,
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 15,
@@ -103,8 +107,9 @@ const styles = StyleSheet.create({
   filterLabel: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#666666',
-    marginLeft: 8,
+    color: '#3B82F6',
+    marginTop: 4,
+    textAlign: 'center',
   },
   separator: {
     width: 1,

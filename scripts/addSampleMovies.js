@@ -1,17 +1,8 @@
-// 🎬 SCRIPT ESCALABLE PARA AGREGAR PELÍCULAS CON HORARIOS
+// Importar las funciones del servicio de películas
+const { addMovieToCategory } = require('../src/services/moviesService');
 
-import { addMovieToCategory, MovieInput } from '../src/services/moviesService';
-
-// Interfaz extendida para incluir horarios por cine
-interface MovieWithSchedules extends MovieInput {
-  schedules?: {
-    cinemaId: string;
-    showtimes: string[]; // Array de horarios como "19:30", "21:45", etc.
-  }[];
-}
-
-// 🎭 PELÍCULAS DE EJEMPLO - Agregar tantas como necesites
-export const sampleMovies: MovieWithSchedules[] = [
+// 🎬 PELÍCULAS EN CARTELERA - Se mostrarán en la sección principal
+const sampleMovies = [
   {
     title: "AVATAR: EL CAMINO DEL AGUA [2022]",
     description: "Jake Sully vive con su nueva familia formada en el planeta de Pandora. Cuando una familiar amenaza regresa para acabar lo que empezó anteriormente, Jake debe trabajar con Neytiri y el ejército de la raza Na'vi para proteger su planeta.",
@@ -71,52 +62,48 @@ export const sampleMovies: MovieWithSchedules[] = [
 ];
 
 // 🎬 PRÓXIMOS ESTRENOS - Películas que se estrenarán próximamente
-export const comingSoonMovies: MovieWithSchedules[] = [
+const comingSoonMovies = [
   {
-    title: "CHAINSAW MAN LA PELÍCULA: ARCO DE REZE",
-    description: "Por primera vez, Chainsaw Man llega a la gran pantalla en una épica aventura cargada de acción que continúa la exitosa serie de anime. Denji trabajaba como Cazador de Demonios para los yakuza, intentando saldar la deuda que heredó de sus padres, hasta que fue traicionado y asesinado por ellos. Al borde de la muerte, su querido perro-demonio con motosierra, Pochita, hizo un pacto con él y le salvó la vida. Esto los fusionó, dando origen al imparable Chainsaw Man. Ahora, en medio de una guerra brutal entre demonios, cazadores y enemigos ocultos, una misteriosa chica llamada Reze entra en su vida, y Denji se enfrenta a la batalla más peligrosa hasta ahora, impulsado por el amor en un mundo donde la supervivencia no tiene reglas.",
-    genre: ["Anime", "Acción", "Sobrenatural"],
-    duration: 100, // 1h 40min
-    releaseDate: new Date('2025-12-15'), // Próximo estreno
-    posterUrl: "https://th.bing.com/th?id=OIF.ljSjxn43fgdbrS%2fG2f4xjg&cb=12&rs=1&pid=ImgDetMain&o=7&rm=3",
+    title: "CHAINSAW MAN: REZE ARC",
+    description: "Denji continúa su vida como Chainsaw Man, pero nuevos demonios y amenazas aparecen. La llegada de Reze, una misteriosa chica con poderes explosivos, cambiará todo lo que creía conocer sobre su mundo.",
+    genre: ["Animación", "Acción", "Sobrenatural"],
+    duration: 120,
+    releaseDate: new Date('2024-03-15'),
+    posterUrl: "https://i.imgur.com/chainsaw-reze.jpg",
     director: "Ryu Nakayama",
-    cast: ["Kikunosuke Toya", "Ai Fairouz", "Makima", "Power"],
-    rating: "+14",
+    cast: ["Kikunosuke Toya", "Ai Fairouz", "Makima Hayashi"],
+    rating: "+16",
     language: "Japonés",
     subtitle: "Subtítulos en español",
-    trailerUrl: "https://www.youtube.com/watch?v=chainsaw-man-trailer",
+    trailerUrl: "https://www.youtube.com/watch?v=chainsaw-reze",
     schedules: [
       {
         cinemaId: "cineplanet-san-miguel",
-        showtimes: ["18:40", "21:00"]
+        showtimes: ["16:00", "19:00", "22:00"]
       },
       {
-        cinemaId: "cineplanet-centro-civico",
-        showtimes: ["18:40", "21:00"]
+        cinemaId: "cineplanet-centro-civico", 
+        showtimes: ["15:30", "18:30", "21:30"]
       },
       {
         cinemaId: "cineplanet-alcazar",
-        showtimes: ["18:40", "21:00"]
-      },
-      {
-        cinemaId: "cineplanet-primavera",
-        showtimes: ["18:40", "21:00"]
-      },
-      {
-        cinemaId: "cineplanet-brasil",
-        showtimes: ["18:40", "21:00"]
+        showtimes: ["17:00", "20:00", "23:00"]
       }
     ]
   }
 ];
 
-// 🎯 FUNCIÓN PRINCIPAL: Agregar películas con horarios
-export const addSampleMovies = async () => {
-  console.log('🎬 Agregando películas con sistema escalable...');
-  
+// 🚀 FUNCIÓN PRINCIPAL PARA AGREGAR TODAS LAS PELÍCULAS
+const addSampleMovies = async () => {
+  console.log('🎬 === INICIANDO CARGA DE PELÍCULAS SAMPLE ===');
+  console.log(`📊 Total a procesar: ${sampleMovies.length + comingSoonMovies.length} películas`);
+  console.log('📍 Películas en Cartelera:', sampleMovies.length);
+  console.log('🔜 Próximos Estrenos:', comingSoonMovies.length);
+  console.log('');
+
   try {
-    // 1. Agregar películas de En Cartelera
-    console.log('📽️ === EN CARTELERA ===');
+    // 1. Agregar películas en cartelera
+    console.log('📍 === EN CARTELERA ===');
     for (const movie of sampleMovies) {
       console.log(`📽️ Agregando: ${movie.title}`);
       
@@ -159,51 +146,13 @@ export const addSampleMovies = async () => {
   }
 };
 
-// 🔧 FUNCIONES DE UTILIDAD
-
-// Agregar una sola película
-export const addSingleMovie = async (movie: MovieWithSchedules, category: 'nowPlaying' | 'comingSoon' | 'btsWeek' = 'nowPlaying') => {
-  console.log(`📽️ Agregando película individual: ${movie.title}`);
-  
-  try {
-    const movieId = await addMovieToCategory(movie, category);
-    console.log(`✅ ${movie.title} agregada a ${category} con ID: ${movieId}`);
-    return movieId;
-  } catch (error) {
-    console.error(`❌ Error agregando ${movie.title}:`, error);
-    throw error;
-  }
-};
-
-// Función legacy para compatibilidad con addAvatarMovie
-export const addAvatarWithSchedules = async () => {
-  const avatarMovie = sampleMovies.find(movie => movie.title.includes('AVATAR'));
-  if (avatarMovie) {
-    return await addSingleMovie(avatarMovie);
-  } else {
-    throw new Error('Avatar no encontrado en las películas de ejemplo');
-  }
-};
-
-// Función para agregar solo próximos estrenos
-export const addComingSoonMovies = async () => {
-  console.log('🔜 Agregando solo próximos estrenos...');
-  
-  try {
-    for (const movie of comingSoonMovies) {
-      console.log(`📽️ Agregando: ${movie.title}`);
-      const movieId = await addSingleMovie(movie, 'comingSoon');
-      console.log(`✅ ${movie.title} agregada a Próximos Estrenos con ID: ${movieId}`);
-    }
-    
-    console.log(`🎉 ¡${comingSoonMovies.length} película(s) de próximos estrenos agregada(s)!`);
-  } catch (error) {
-    console.error('❌ Error agregando próximos estrenos:', error);
-    throw error;
-  }
-};
-
 // Ejecutar si se llama directamente
 if (require.main === module) {
   addSampleMovies();
 }
+
+module.exports = {
+  addSampleMovies,
+  sampleMovies,
+  comingSoonMovies
+};

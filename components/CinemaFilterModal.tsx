@@ -51,7 +51,7 @@ export default function CinemaFilterModal({
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
-            <IconSymbol name="building.2" size={20} color="#FFFFFF" />
+            <IconSymbol name="camera" size={20} color="#FFFFFF" />
             <ThemedText style={styles.headerTitle}>Filtra por Cine</ThemedText>
           </View>
           <TouchableOpacity onPress={onClose}>

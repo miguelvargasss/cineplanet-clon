@@ -115,40 +115,19 @@ export default function MovieDetailsScreen() {
       return;
     }
 
-    Alert.alert(
-      'Confirmar Compra',
-      `¿Deseas comprar entradas para la función de ${showtime.time}?\n\nPrecio: S/. ${showtime.price.toFixed(2)}`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Comprar', 
-          onPress: async () => {
-            try {
-              await createTicketPurchase({
-                userId: user.uid,
-                movieId: movie!.id!,
-                showtimeId: showtime.id,
-                cinemaId: showtime.cinemaId,
-                seats: ['A1'], // Por simplicidad, asignamos un asiento automáticamente
-                totalPrice: showtime.price
-              });
-              
-              Alert.alert(
-                '¡Compra Exitosa!',
-                'Tu entrada ha sido reservada exitosamente.',
-                [{ text: 'OK' }]
-              );
-            } catch (error) {
-              Alert.alert(
-                'Error',
-                'No se pudo procesar la compra. Inténtalo de nuevo.',
-                [{ text: 'OK' }]
-              );
-            }
-          }
-        }
-      ]
-    );
+    // Redirigir a la pantalla de selección de asientos
+    router.push({
+      pathname: '/seat-selection',
+      params: {
+        movieId: movie!.id!,
+        showtimeId: showtime.id,
+        cinemaId: showtime.cinemaId,
+        time: showtime.time,
+        price: showtime.price.toString(),
+        date: selectedDate,
+        cinemaName: selectedCinema
+      }
+    });
   };
 
   useEffect(() => {
@@ -240,6 +219,10 @@ export default function MovieDetailsScreen() {
         >
           {/* Video/Imagen principal */}
           <View style={styles.mediaContainer}>
+            {/* Sección Estreno - Movida aquí y posicionada encima */}
+            <View style={styles.premiereSection}>
+              <ThemedText style={styles.premiereText}>Estreno</ThemedText>
+            </View>
             <Image 
               source={{ uri: movie.posterUrl }}
               style={styles.mainImage}
@@ -261,11 +244,6 @@ export default function MovieDetailsScreen() {
             <View style={styles.ratingBadge}>
               <ThemedText style={styles.ratingBadgeText}>+14 DNI</ThemedText>
             </View>
-          </View>
-
-          {/* Sección Estreno */}
-          <View style={styles.premiereSection}>
-            <ThemedText style={styles.premiereText}>Estreno</ThemedText>
           </View>
 
           {/* Tabs de navegación */}
@@ -557,14 +535,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   premiereSection: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     backgroundColor: '#E53E3E',
-    paddingVertical: 12,
+    paddingVertical: 6,
     paddingHorizontal: 16,
     alignItems: 'center',
+    zIndex: 1,
   },
   premiereText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
   movieTitleOverlay: {

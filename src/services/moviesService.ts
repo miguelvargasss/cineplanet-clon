@@ -135,7 +135,8 @@ export const getMoviesByCategory = async (category: 'nowPlaying' | 'comingSoon' 
     }
     
     const moviesRef = collection(db, collectionName);
-    const q = query(moviesRef, orderBy('releaseDate', 'desc'));
+    // Cambiar orden: usar createdAt ascendente para que las nuevas películas aparezcan al final
+    const q = query(moviesRef, orderBy('createdAt', 'asc'));
     const querySnapshot = await getDocs(q);
     
     const movies: Movie[] = [];
@@ -285,28 +286,161 @@ export const ensureMoviesExist = async (): Promise<void> => {
     const moviesRef = collection(db, 'movies');
     const moviesSnapshot = await getDocs(moviesRef);
     
-    // Verificar si hay películas en "Próximos Estrenos"
+    console.log(`📊 Películas en "En Cartelera": ${moviesSnapshot.size}`);
+    
+    // Si hay menos de 2 películas, agregar las películas básicas
+    if (moviesSnapshot.size < 2) {
+      console.log('🎬 Agregando películas básicas...');
+      
+      // Importar el servicio simplificado
+      const { addMovieIfNotExists } = await import('./simpleMovieService');
+      
+      // Agregar Avatar si no existe
+      const avatarMovie = {
+        title: "AVATAR: EL CAMINO DEL AGUA [2022]",
+        description: "Jake Sully vive con su nueva familia formada en el planeta de Pandora. Cuando una familiar amenaza regresa para acabar lo que empezó anteriormente, Jake debe trabajar con Neytiri y el ejército de la raza Na'vi para proteger su planeta.",
+        genre: ["Aventura", "Ciencia Ficción", "Acción"],
+        duration: 192,
+        releaseDate: "2022-12-16",
+        posterUrl: "https://lumiere-a.akamaihd.net/v1/images/b162385cffbbe656f1e654b80098ac57_3276x4096_380354b0.jpeg?region=0,0,3276,4096",
+        director: "James Cameron",
+        cast: ["Sam Worthington", "Zoe Saldana", "Sigourney Weaver", "Stephen Lang", "Kate Winslet"],
+        rating: "+14",
+        language: "Inglés",
+        subtitle: "Subtítulos en español",
+        trailerUrl: "https://www.youtube.com/watch?v=d9MyW72ELq0",
+        schedules: [
+          {
+            cinemaId: "cineplanet-san-miguel",
+            showtimes: ["19:30", "21:45", "22:10"]
+          },
+          {
+            cinemaId: "cineplanet-centro-civico", 
+            showtimes: ["19:30", "21:45", "22:10"]
+          },
+          {
+            cinemaId: "cineplanet-alcazar",
+            showtimes: ["19:30", "21:45", "22:10"]
+          }
+        ]
+      };
+      
+      // Agregar Crónicas de Exorcismo si no existe
+      const cronicasMovie = {
+        title: "CRÓNICAS DE EXORCISMO: EL COMIENZO",
+        description: "El padre Park es un médico convertido en sacerdote que fue excomulgado por realizar exorcismos para una iglesia que negaba la existencia de males sobrenaturales. Cuando su viejo amigo, un monje de un templo secreto y lleno de magia, lo llama para proteger a un niño ingenuo, pero poderoso, de su malvado maestro, el padre Park deberá enfrentarse a su pasado.",
+        genre: ["Animación"],
+        duration: 85,
+        releaseDate: "2024-01-15",
+        posterUrl: "https://cinesunidosweb.blob.core.windows.net/poster/HO00005608.jpg",
+        director: "No especificado",
+        cast: [],
+        rating: "+14",
+        language: "DOBLADA",
+        subtitle: "Subtítulos en español",
+        trailerUrl: "https://www.youtube.com/watch?v=example",
+        schedules: [
+          {
+            cinemaId: "cineplanet-san-miguel",
+            showtimes: ["17:20", "20:30"]
+          },
+          {
+            cinemaId: "cineplanet-centro-civico", 
+            showtimes: ["17:20", "20:30"]
+          },
+          {
+            cinemaId: "cineplanet-alcazar",
+            showtimes: ["17:20", "20:30"]
+          }
+        ]
+      };
+      
+      await addMovieIfNotExists(avatarMovie, 'movies');
+      await addMovieIfNotExists(cronicasMovie, 'movies');
+    }
+    
+    // Verificar próximos estrenos
     const comingSoonRef = collection(db, 'moviesEstreno');
     const comingSoonSnapshot = await getDocs(comingSoonRef);
     
-    // Si no hay películas en ninguna de las dos colecciones principales, agregar todas
-    if (moviesSnapshot.empty && comingSoonSnapshot.empty) {
-      console.log('No hay películas en ninguna colección, agregando películas de ejemplo...');
-      const { addSampleMovies } = await import('../../scripts/addSampleMovies');
-      await addSampleMovies();
-    } else {
-      console.log(`${moviesSnapshot.size} película(s) en "En Cartelera"`);
-      console.log(`${comingSoonSnapshot.size} película(s) en "Próximos Estrenos"`);
+    console.log(`🔜 Películas en "Próximos Estrenos": ${comingSoonSnapshot.size}`);
+    
+    if (comingSoonSnapshot.size === 0) {
+      console.log('🔜 Agregando película de próximos estrenos...');
       
-      // Si falta Chainsaw Man en próximos estrenos, agregarla
-      if (comingSoonSnapshot.empty) {
-        console.log('Agregando películas de próximos estrenos...');
-        const { addComingSoonMovies } = await import('../../scripts/addSampleMovies');
-        await addComingSoonMovies();
-      }
+      const { addMovieIfNotExists } = await import('./simpleMovieService');
+      
+      const chainsawMovie = {
+        title: "CHAINSAW MAN: REZE ARC",
+        description: "Denji continúa su vida como Chainsaw Man, pero nuevos demonios y amenazas aparecen. La llegada de Reze, una misteriosa chica con poderes explosivos, cambiará todo lo que creía conocer sobre su mundo.",
+        genre: ["Animación", "Acción", "Sobrenatural"],
+        duration: 120,
+        releaseDate: "2024-03-15",
+        posterUrl: "https://i.imgur.com/chainsaw-reze.jpg",
+        director: "Ryu Nakayama",
+        cast: ["Kikunosuke Toya", "Ai Fairouz", "Makima Hayashi"],
+        rating: "+16",
+        language: "Japonés",
+        subtitle: "Subtítulos en español",
+        trailerUrl: "https://www.youtube.com/watch?v=chainsaw-reze",
+        schedules: [
+          {
+            cinemaId: "cineplanet-san-miguel",
+            showtimes: ["16:00", "19:00", "22:00"]
+          },
+          {
+            cinemaId: "cineplanet-centro-civico", 
+            showtimes: ["15:30", "18:30", "21:30"]
+          },
+          {
+            cinemaId: "cineplanet-alcazar",
+            showtimes: ["17:00", "20:00", "23:00"]
+          }
+        ]
+      };
+      
+      await addMovieIfNotExists(chainsawMovie, 'moviesEstreno');
     }
+    
   } catch (error) {
-    console.error('Error verificando películas:', error);
+    console.error('❌ Error en ensureMoviesExist:', error);
     // No lanzar error para no afectar la carga de otras películas
+  }
+};
+
+// 🚀 FUNCIÓN SIMPLIFICADA PARA AGREGAR PELÍCULAS
+export const addMovieSimple = async (movieData: any, category: 'movies' | 'moviesEstreno' = 'movies'): Promise<string | null> => {
+  try {
+    console.log(`🎬 Agregando película: ${movieData.title} a ${category}`);
+    
+    // Verificar si ya existe
+    const collectionRef = collection(db, category);
+    const snapshot = await getDocs(collectionRef);
+    const exists = snapshot.docs.some(doc => doc.data().title === movieData.title);
+    
+    if (exists) {
+      console.log(`⚠️ La película "${movieData.title}" ya existe en ${category}`);
+      return null;
+    }
+    
+    // Preparar documento
+    const movieDoc = {
+      ...movieData,
+      releaseDate: Timestamp.fromDate(new Date(movieData.releaseDate)),
+      createdAt: Timestamp.fromDate(new Date()),
+      updatedAt: Timestamp.fromDate(new Date()),
+      isNowPlaying: category === 'movies',
+      isComingSoon: category === 'moviesEstreno',
+      isBTSWeek: false
+    };
+    
+    // Agregar a Firebase
+    const docRef = await addDoc(collectionRef, movieDoc);
+    console.log(`✅ Película agregada exitosamente con ID: ${docRef.id}`);
+    return docRef.id;
+    
+  } catch (error) {
+    console.error('❌ Error agregando película:', error);
+    throw error;
   }
 };
