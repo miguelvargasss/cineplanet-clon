@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { StyleSheet, TouchableOpacity, Modal, FlatList } from 'react-native';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { ThemedText } from '../ui/ThemedText';
+import { ThemedView } from '../ui/ThemedView';
+import { IconSymbol } from '../ui/IconSymbol';
+import { useThemeColor } from '@/src/hooks/useThemeColor';
 
 export type DropdownOption = {
   label: string;

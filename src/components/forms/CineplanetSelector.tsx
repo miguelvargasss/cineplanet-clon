@@ -1,9 +1,9 @@
 import React from 'react';
 import { StyleSheet, ScrollView, View, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemedText } from '@/components/ThemedText';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { ThemedText } from '@/src/components/ui/ThemedText';
+import { IconSymbol } from '@/src/components/ui/IconSymbol';
+import { useThemeColor } from '@/src/hooks/useThemeColor';
 
 // Lista completa de Cineplanets
 const cineplanets = [

@@ -10,10 +10,10 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ThemedText } from '@/components/ThemedText';
-import { useThemeColor } from '@/hooks/useThemeColor';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import { MovieCard } from '@/components/MovieCard';
+import { ThemedText } from '@/src/components/ui/ThemedText';
+import { useThemeColor } from '@/src/hooks/useThemeColor';
+import { IconSymbol } from '@/src/components/ui/IconSymbol';
+import { MovieCard } from '@/src/components/movies/MovieCard';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { Movie, getMoviesByCategory, ensureMoviesExist } from '@/src/services/moviesService';
 import { logoutUser } from '@/src/services/authService';

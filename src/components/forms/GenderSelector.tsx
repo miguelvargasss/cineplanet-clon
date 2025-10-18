@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import { ThemedText } from '@/components/ThemedText';
-import { IconSymbol } from '@/components/ui/IconSymbol';
+import { ThemedText } from '@/src/components/ui/ThemedText';
+import { IconSymbol } from '@/src/components/ui/IconSymbol';
 
 export type GenderOption = 'male' | 'female' | null;
 

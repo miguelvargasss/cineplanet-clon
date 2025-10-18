@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { StyleSheet, TouchableOpacity, View, Modal, ScrollView } from 'react-native';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { ThemedText } from '@/src/components/ui/ThemedText';
+import { ThemedView } from '@/src/components/ui/ThemedView';
+import { IconSymbol } from '@/src/components/ui/IconSymbol';
+import { useThemeColor } from '@/src/hooks/useThemeColor';
 
 export type DateSelectorProps = {
   selectedDate?: Date;

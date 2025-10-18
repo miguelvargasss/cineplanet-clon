@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { IconSymbol } from '@/src/components/ui/IconSymbol';
+import { useThemeColor } from '@/src/hooks/useThemeColor';
 
 export type ThemedCheckboxProps = {
   checked: boolean;

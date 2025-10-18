@@ -1,8 +1,8 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
-import { ThemedView } from '@/components/ThemedView';
-import { ThemedText } from '@/components/ThemedText';
-import { Movie } from '../src/services/moviesService';
+import { ThemedView } from '../ui/ThemedView';
+import { ThemedText } from '../ui/ThemedText';
+import { Movie } from '../../services/moviesService';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width / 2; 

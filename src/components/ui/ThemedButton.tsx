@@ -1,8 +1,8 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View, type TouchableOpacityProps } from 'react-native';
-import { ThemedText } from '@/components/ThemedText';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { ThemedText } from './ThemedText';
+import { IconSymbol } from './IconSymbol';
+import { useThemeColor } from '@/src/hooks/useThemeColor';
 import { type SymbolViewProps } from 'expo-symbols';
 
 export type ThemedButtonProps = TouchableOpacityProps & {
@@ -27,8 +27,8 @@ export function ThemedButton({
   ...rest
 }: ThemedButtonProps) {
   // Determinar colores basados en la variante
-  let backgroundColorKey: keyof typeof import('@/constants/Colors').Colors.light;
-  let textColorKey: keyof typeof import('@/constants/Colors').Colors.light;
+  let backgroundColorKey: keyof typeof import('@/src/constants/Colors').Colors.light;
+  let textColorKey: keyof typeof import('@/src/constants/Colors').Colors.light;
   
   switch (variant) {
     case 'primary':

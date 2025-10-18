@@ -10,9 +10,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ThemedText } from '@/components/ThemedText';
-import { useThemeColor } from '@/hooks/useThemeColor';
-import { IconSymbol } from '@/components/ui/IconSymbol';
+import { ThemedText } from '@/src/components/ui/ThemedText';
+import { useThemeColor } from '@/src/hooks/useThemeColor';
+import { IconSymbol } from '@/src/components/ui/IconSymbol';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { Movie, getMovieById } from '@/src/services/moviesServiceAdapter';
 import { getSeatsByCinemaAndShowtimeUseCase } from '@/src/config/dependencies';

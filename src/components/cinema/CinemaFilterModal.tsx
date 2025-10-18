@@ -1,37 +1,44 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet, ScrollView, Modal } from 'react-native';
-import { ThemedText } from './ThemedText';
-import { useThemeColor } from '@/hooks/useThemeColor';
-import { IconSymbol } from './ui/IconSymbol';
+import { ThemedText } from '../ui/ThemedText';
+import { useThemeColor } from '@/src/hooks/useThemeColor';
+import { IconSymbol } from '../ui/IconSymbol';
+import { limecinemas } from '@/src/data/cinemas';
 
-interface CityFilterModalProps {
+interface CinemaFilterModalProps {
   visible: boolean;
-  selectedCity: string;
-  onSelectCity: (city: string) => void;
+  selectedCinema: string;
+  onSelectCinema: (cinema: string) => void;
   onClose: () => void;
 }
 
-const cities = [
-  'Lima',
-  'Chiclayo', 
-  'Juliaca',
-  'Arequipa',
-  'Huancayo',
-  'Cusco',
-  'Huánuco',
-  'Piura',
-  'Tacna',
-  'Trujillo'
+// Cines adicionales que aparecen en las imágenes
+const additionalCinemas = [
+  { id: 'cp-plaza-santa-catalina', name: 'CP Plaza Santa Catalina' },
+  { id: 'cp-chiclayo-mall-aventura', name: 'CP Chiclayo Mall Aventura' },
+  { id: 'cp-guardia-civil', name: 'CP Guardia Civil' },
+  { id: 'cp-parque-la-molina', name: 'CP Parque La Molina' },
+  { id: 'cp-juliaca', name: 'CP Juliaca' },
+  { id: 'cp-san-juan-lurigancho', name: 'CP San Juan de Lurigancho' },
+  { id: 'cp-la-molina', name: 'CP La Molina' },
+  { id: 'cp-norte', name: 'CP Norte' },
+  { id: 'cp-mall-del-sur', name: 'CP Mall del Sur' }
 ];
 
-export default function CityFilterModal({ 
+export default function CinemaFilterModal({ 
   visible, 
-  selectedCity, 
-  onSelectCity, 
+  selectedCinema, 
+  onSelectCinema, 
   onClose 
-}: CityFilterModalProps) {
+}: CinemaFilterModalProps) {
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
+
+  // Combinar cines existentes con los adicionales
+  const allCinemas = [
+    ...limecinemas.map(cinema => ({ id: cinema.id, name: cinema.name })),
+    ...additionalCinemas
+  ];
 
   return (
     <Modal
@@ -44,33 +51,33 @@ export default function CityFilterModal({
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
-            <IconSymbol name="mappin" size={20} color="#FFFFFF" />
-            <ThemedText style={styles.headerTitle}>Filtra por Ciudad</ThemedText>
+            <IconSymbol name="camera" size={20} color="#FFFFFF" />
+            <ThemedText style={styles.headerTitle}>Filtra por Cine</ThemedText>
           </View>
           <TouchableOpacity onPress={onClose}>
             <IconSymbol name="xmark" size={24} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
 
-        {/* Cities List */}
-        <ScrollView style={styles.citiesList}>
-          {cities.map((city) => (
+        {/* Cinemas List */}
+        <ScrollView style={styles.cinemasList}>
+          {allCinemas.map((cinema) => (
             <TouchableOpacity
-              key={city}
+              key={cinema.id}
               style={[
-                styles.cityItem,
-                selectedCity === city && styles.selectedCityItem
+                styles.cinemaItem,
+                selectedCinema === cinema.id && styles.selectedCinemaItem
               ]}
               onPress={() => {
-                onSelectCity(city);
+                onSelectCinema(cinema.id);
                 onClose();
               }}
             >
               <ThemedText style={[
-                styles.cityText,
-                selectedCity === city && styles.selectedCityText
+                styles.cinemaText,
+                selectedCinema === cinema.id && styles.selectedCinemaText
               ]}>
-                {city}
+                {cinema.name}
               </ThemedText>
             </TouchableOpacity>
           ))}
@@ -104,24 +111,24 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     textDecorationLine: 'underline',
   },
-  citiesList: {
+  cinemasList: {
     flex: 1,
   },
-  cityItem: {
+  cinemaItem: {
     paddingHorizontal: 20,
     paddingVertical: 18,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.2)',
   },
-  selectedCityItem: {
+  selectedCinemaItem: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
-  cityText: {
+  cinemaText: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '400',
   },
-  selectedCityText: {
+  selectedCinemaText: {
     fontWeight: '600',
   },
 });

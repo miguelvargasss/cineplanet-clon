@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { StyleSheet, ScrollView, View, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { ThemedInput } from '@/components/ThemedInput';
-import { ThemedButton } from '@/components/ThemedButton';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { ThemedText } from '@/src/components/ui/ThemedText';
+import { ThemedView } from '@/src/components/ui/ThemedView';
+import { ThemedInput } from '@/src/components/forms/ThemedInput';
+import { ThemedButton } from '@/src/components/ui/ThemedButton';
+import { IconSymbol } from '@/src/components/ui/IconSymbol';
+import { useThemeColor } from '@/src/hooks/useThemeColor';
 import { router } from 'expo-router';
 import { loginWithDNI, getAuthErrorMessage } from '../../src/services/authService';
 import { AuthError } from 'firebase/auth';

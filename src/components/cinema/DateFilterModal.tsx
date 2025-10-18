@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet, Modal } from 'react-native';
-import { ThemedText } from './ThemedText';
-import { useThemeColor } from '@/hooks/useThemeColor';
-import { IconSymbol } from './ui/IconSymbol';
+import { ThemedText } from '../ui/ThemedText';
+import { useThemeColor } from '@/src/hooks/useThemeColor';
+import { IconSymbol } from '../ui/IconSymbol';
 
 interface DateFilterModalProps {
   visible: boolean;

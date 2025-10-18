@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
-import { ThemedText } from '@/components/ThemedText';
+import { ThemedText } from './ui/ThemedText';
 import { router } from 'expo-router';
 
 interface ProtectedRouteProps {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, TextInput, View, TouchableOpacity, type TextInputProps } from 'react-native';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { IconSymbol } from '@/src/components/ui/IconSymbol';
+import { useThemeColor } from '@/src/hooks/useThemeColor';
 
 export type ThemedInputProps = TextInputProps & {
   lightColor?: string;
