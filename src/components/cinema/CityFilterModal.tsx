@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet, ScrollView, Modal } from 'react-native';
 import { ThemedText } from '../ui/ThemedText';
-import { useThemeColor } from '@/src/hooks/useThemeColor';
 import { IconSymbol } from '../ui/IconSymbol';
 
 interface CityFilterModalProps {
@@ -30,9 +29,6 @@ export default function CityFilterModal({
   onSelectCity, 
   onClose 
 }: CityFilterModalProps) {
-  const backgroundColor = useThemeColor({}, 'background');
-  const textColor = useThemeColor({}, 'text');
-
   return (
     <Modal
       animationType="slide"

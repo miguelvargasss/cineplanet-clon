@@ -9,7 +9,6 @@ interface CityTabsProps {
 }
 
 export default function CityTabs({ selectedCity, onCitySelect }: CityTabsProps) {
-  const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const cities = ['Lima']; // Por ahora solo Lima
 

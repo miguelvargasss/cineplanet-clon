@@ -18,7 +18,7 @@ import { IconSymbol } from '@/src/components/ui/IconSymbol';
 import { Movie, getMovieById } from '@/src/services/moviesService';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { MovieSchedule, Showtime } from '@/src/types';
-import { getMovieSchedules, getMovieScheduleForCinema, createTicketPurchase } from '@/src/services/ticketService';
+import { getMovieScheduleForCinema } from '@/src/services/ticketService';
 import FilterBar from '@/src/components/cinema/FilterBar';
 import CityFilterModal from '@/src/components/cinema/CityFilterModal';
 import CinemaFilterModal from '@/src/components/cinema/CinemaFilterModal';
@@ -43,7 +43,6 @@ export default function MovieDetailsScreen() {
   const [selectedCity, setSelectedCity] = useState('Lima');
   const [selectedCinema, setSelectedCinema] = useState('cp-alcazar');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [movieSchedules, setMovieSchedules] = useState<MovieSchedule[]>([]);
   const [userCinemaSchedule, setUserCinemaSchedule] = useState<MovieSchedule | null>(null);
   const [loadingSchedules, setLoadingSchedules] = useState(false);
   
@@ -88,18 +87,15 @@ export default function MovieDetailsScreen() {
     try {
       setLoadingSchedules(true);
       
-      // Cargar todos los horarios
-      const schedules = await getMovieSchedules(movieId);
-      setMovieSchedules(schedules);
-      
       // Usar el cine seleccionado por el usuario
       const userSchedule = await getMovieScheduleForCinema(movieId, selectedCinema);
       setUserCinemaSchedule(userSchedule);
     } catch (err) {
-      console.error('Error loading schedules:', err);
+      console.error('❌ ERROR: Error loading schedules:', err);
     } finally {
       setLoadingSchedules(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCinema]);
 
   const handleShowtimeSelect = async (showtime: Showtime) => {
@@ -377,9 +373,11 @@ export default function MovieDetailsScreen() {
                     />
                   ) : (
                     <View style={styles.noCinemaContainer}>
-                      <ThemedText style={[styles.noCinemaText, { color: textColor }]}>
-                        No hay horarios disponibles para esta película en el cine seleccionado.
-                      </ThemedText>
+                      <Image 
+                        source={require('../img/FuncionNoAbierta.jpg')}
+                        style={styles.noScheduleImage}
+                        resizeMode="contain"
+                      />
                     </View>
                   )}
 
@@ -694,11 +692,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   noCinemaContainer: {
-    margin: 20,
-    padding: 20,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 8,
+    margin: 0,
+    padding: 0,
+    backgroundColor: 'transparent',
     alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+  },
+  noScheduleImage: {
+    width: '100%',
+    height: 400,
+    marginVertical: 0,
   },
   noCinemaText: {
     fontSize: 16,

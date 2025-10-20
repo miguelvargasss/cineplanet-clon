@@ -1,13 +1,22 @@
-// SERVICIO PARA HORARIOS Y COMPRA DE ENTRADAS
+// 🎫 SERVICIO PARA HORARIOS Y COMPRA DE ENTRADAS
+// 
+// ✅ IMPLEMENTACIÓN ACTUALIZADA (Oct 2025)
+// - Lee horarios reales desde Firebase Firestore
+// - Convierte estructura simple de BD a estructura compleja de UI
+// - Fallback a horarios hardcodeados si no hay datos en Firebase
+//
+// FLUJO:
+// 1. Buscar película en Firebase por ID
+// 2. Extraer schedules de la película
+// 3. Convertir { cinemaId, showtimes[] } a { cinemaId, cinemaName, Showtime[] }
+// 4. Si no hay datos, usar horarios por defecto
 
 import { 
   collection, 
   doc, 
   getDocs, 
-  getDoc,
   addDoc, 
   updateDoc, 
-  deleteDoc, 
   query, 
   where,
   orderBy, 
@@ -16,6 +25,114 @@ import {
 import { db } from '../config/firebase';
 import { MovieSchedule, Showtime, TicketPurchase } from '../types';
 import { getCinemaById } from '../data/cinemas';
+
+// 🔄 MAPEO DE IDS: Firebase -> Aplicación
+const mapCinemaIdFromFirebase = (firebaseId: string): string => {
+  const idMapping: { [key: string]: string } = {
+    'cineplanet-alcazar': 'cp-alcazar',
+    'cineplanet-centro-civico': 'cp-centro-civico',
+    'cineplanet-san-miguel': 'cp-san-miguel',
+    'cineplanet-brasil': 'cp-brasil',
+    'cineplanet-primavera': 'cp-primavera'
+  };
+  
+  return idMapping[firebaseId] || firebaseId;
+};
+
+// 🔄 MAPEO DE IDS: Aplicación -> Firebase  
+const mapCinemaIdToFirebase = (appId: string): string => {
+  const idMapping: { [key: string]: string } = {
+    'cp-alcazar': 'cineplanet-alcazar',
+    'cp-centro-civico': 'cineplanet-centro-civico', 
+    'cp-san-miguel': 'cineplanet-san-miguel',
+    'cp-brasil': 'cineplanet-brasil',
+    'cp-primavera': 'cineplanet-primavera'
+  };
+  
+  return idMapping[appId] || appId;
+};
+import { getMovieById } from './moviesService';
+
+// 🔄 FUNCIÓN PARA CONVERTIR HORARIOS DESDE FIREBASE
+const convertFirebaseSchedulesToUI = (
+  movieId: string,
+  firebaseSchedules: { cinemaId: string; showtimes: string[] }[]
+): MovieSchedule[] => {
+  const today = new Date();
+  
+  return firebaseSchedules.map((schedule) => {
+    // 🎯 MAPEAR ID DE FIREBASE A ID DE APLICACIÓN
+    const appCinemaId = mapCinemaIdFromFirebase(schedule.cinemaId);
+    const cinema = getCinemaById(appCinemaId);
+    const cinemaName = cinema ? cinema.name : appCinemaId;
+    
+    const showtimes: Showtime[] = schedule.showtimes.map((time, index) => ({
+      id: `${movieId}-${appCinemaId}-${index}`,
+      movieId,
+      cinemaId: appCinemaId, // Usar ID mapeado
+      date: today.toISOString().split('T')[0],
+      time: time,
+      format: '2D', // Por defecto 2D, se puede mejorar después
+      language: 'SUB', // Por defecto subtitulada
+      availableSeats: 120 - Math.floor(Math.random() * 30), // Simulado
+      totalSeats: 120,
+      price: 12.00 // Precio base
+    }));
+    
+    return {
+      cinemaId: appCinemaId, // Usar ID mapeado
+      cinemaName: cinemaName,
+      showtimes: showtimes
+    };
+  });
+};
+
+// 📖 FUNCIÓN PARA LEER HORARIOS REALES DESDE FIREBASE
+const getSchedulesFromFirebase = async (movieId: string): Promise<MovieSchedule[]> => {
+  try {
+    // Obtener la película desde Firebase
+    const movie = await getMovieById(movieId);
+    
+    if (!movie) {
+      return [];
+    }
+    
+    // Verificar si tiene schedules
+    if (!movie.schedules || movie.schedules.length === 0) {
+      return generateSampleSchedules(movieId); // Fallback a horarios por defecto
+    }
+    
+    // Verificar si los schedules tienen la estructura correcta
+    // En Firebase se guardan como { cinemaId: string; showtimes: string[] }
+    const validSchedules = movie.schedules.filter(schedule => 
+      schedule && 
+      typeof schedule === 'object' && 
+      'cinemaId' in schedule && 
+      'showtimes' in schedule &&
+      Array.isArray(schedule.showtimes)
+    );
+    
+    if (validSchedules.length === 0) {
+      return generateSampleSchedules(movieId);
+    }
+    
+    // Convertir estructura simple de Firebase a estructura compleja de UI
+    const firebaseSchedules = validSchedules.map(schedule => ({
+      cinemaId: schedule.cinemaId,
+      showtimes: Array.isArray(schedule.showtimes) 
+        ? (schedule.showtimes as any[]).map(st => typeof st === 'string' ? st : st.time || '12:00')
+        : ['12:00'] // Fallback
+    }));
+    
+    const convertedSchedules = convertFirebaseSchedulesToUI(movieId, firebaseSchedules);
+    
+    return convertedSchedules;
+    
+  } catch (error) {
+    console.error('❌ Error leyendo horarios desde Firebase:', error);
+    return generateSampleSchedules(movieId);
+  }
+};
 
 // Generar horarios específicos para Avatar: El Camino del Agua
 export const generateAvatarSchedules = (movieId: string): MovieSchedule[] => {
@@ -147,17 +264,27 @@ export const generateSampleSchedules = (movieId: string): MovieSchedule[] => {
 // Obtener horarios para una película específica
 export const getMovieSchedules = async (movieId: string): Promise<MovieSchedule[]> => {
   try {
-    // Verificar si es Avatar para usar horarios específicos
+    // 🔥 NUEVA IMPLEMENTACIÓN: Leer horarios reales desde Firebase
+    const realSchedules = await getSchedulesFromFirebase(movieId);
+    
+    if (realSchedules.length > 0) {
+      return realSchedules;
+    }
+    
+    // 🔄 FALLBACK: Si no hay horarios en Firebase, usar los hardcodeados
+    
+    // Verificar si es Avatar para usar horarios específicos (legacy)
     if (movieId === 'avatar-camino-agua' || movieId.includes('avatar')) {
       return generateAvatarSchedules(movieId);
     }
     
-    // En una implementación real, esto vendría de Firebase
-    // Por ahora, generamos datos de ejemplo
+    // Generar datos de ejemplo como último recurso
     return generateSampleSchedules(movieId);
+    
   } catch (error) {
-    console.error('Error getting movie schedules:', error);
-    throw error;
+    console.error('❌ Error getting movie schedules:', error);
+    // En caso de error, generar horarios de ejemplo
+    return generateSampleSchedules(movieId);
   }
 };
 
@@ -213,7 +340,6 @@ export const createTicketPurchase = async (
       purchaseDate: Timestamp.fromDate(ticketPurchase.purchaseDate)
     });
 
-    console.log('✅ Ticket purchase created:', docRef.id);
     return docRef.id;
   } catch (error) {
     console.error('Error creating ticket purchase:', error);
@@ -257,8 +383,6 @@ export const confirmTicketPurchase = async (purchaseId: string): Promise<void> =
       status: 'confirmed',
       confirmedAt: Timestamp.fromDate(new Date())
     });
-    
-    console.log('✅ Ticket purchase confirmed:', purchaseId);
   } catch (error) {
     console.error('Error confirming ticket purchase:', error);
     throw error;
@@ -273,8 +397,6 @@ export const cancelTicketPurchase = async (purchaseId: string): Promise<void> =>
       status: 'cancelled',
       cancelledAt: Timestamp.fromDate(new Date())
     });
-    
-    console.log('✅ Ticket purchase cancelled:', purchaseId);
   } catch (error) {
     console.error('Error cancelling ticket purchase:', error);
     throw error;

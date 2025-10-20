@@ -96,7 +96,6 @@ export const storage = {
   setItem: async (key: string, value: any): Promise<void> => {
     try {
       // TODO: Implementar con AsyncStorage o SecureStore
-      console.log(`Would save ${key}:`, value);
     } catch (error) {
       console.error('Error saving to storage:', error);
     }
@@ -104,14 +103,12 @@ export const storage = {
   
   getItem: async <T>(key: string): Promise<T | null> => {
     // TODO: Implementar con AsyncStorage o SecureStore
-    console.log(`Would get ${key}`);
     return null;
   },
   
   removeItem: async (key: string): Promise<void> => {
     try {
       // TODO: Implementar con AsyncStorage o SecureStore
-      console.log(`Would remove ${key}`);
     } catch (error) {
       console.error('Error removing from storage:', error);
     }

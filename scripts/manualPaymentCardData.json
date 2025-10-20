@@ -1,0 +1,63 @@
+{
+  "instructions": "🏦 TARJETA DE PAGO - AGREGAR MANUALMENTE EN FIREBASE CONSOLE",
+  "steps": [
+    "1. Ve a Firebase Console > Firestore Database",
+    "2. Haz clic en 'Iniciar colección'",
+    "3. ID de colección: paymentCards",
+    "4. Haz clic en 'Siguiente'",
+    "5. Copia y pega los campos a continuación"
+  ],
+  "sampleCard": {
+    "userId": "TU_USER_ID_AQUI",
+    "cardNumber": "9456",
+    "cardType": "visa",
+    "cardHolder": "MIGUEL VARGAS",
+    "expiryDate": "12/2026",
+    "isDefault": true,
+    "createdAt": "USAR_TIMESTAMP_DE_FIREBASE",
+    "updatedAt": "USAR_TIMESTAMP_DE_FIREBASE"
+  },
+  "fields": [
+    {
+      "campo": "userId",
+      "tipo": "string",
+      "valor": "Obten tu userId desde Authentication > Users"
+    },
+    {
+      "campo": "cardNumber",
+      "tipo": "string",
+      "valor": "9456 (últimos 4 dígitos)"
+    },
+    {
+      "campo": "cardType",
+      "tipo": "string",
+      "valor": "visa, mastercard, amex o diners"
+    },
+    {
+      "campo": "cardHolder",
+      "tipo": "string",
+      "valor": "TU NOMBRE COMPLETO EN MAYÚSCULAS"
+    },
+    {
+      "campo": "expiryDate",
+      "tipo": "string",
+      "valor": "MM/YYYY (ejemplo: 12/2026)"
+    },
+    {
+      "campo": "isDefault",
+      "tipo": "boolean",
+      "valor": "true"
+    },
+    {
+      "campo": "createdAt",
+      "tipo": "timestamp",
+      "valor": "Haz clic en el icono del reloj y selecciona 'Ahora'"
+    },
+    {
+      "campo": "updatedAt",
+      "tipo": "timestamp",
+      "valor": "Haz clic en el icono del reloj y selecciona 'Ahora'"
+    }
+  ],
+  "note": "⚠️ Recuerda cambiar las reglas de Firebase de vuelta a las seguras después de agregar la tarjeta"
+}

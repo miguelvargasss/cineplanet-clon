@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { ThemedText } from '../ui/ThemedText';
-import { useThemeColor } from '@/src/hooks/useThemeColor';
 import { IconSymbol } from '../ui/IconSymbol';
 
 interface FilterBarProps {
@@ -21,9 +20,6 @@ export default function FilterBar({
   onCinemaPress,
   onDatePress 
 }: FilterBarProps) {
-  const backgroundColor = useThemeColor({}, 'background');
-  const textColor = useThemeColor({}, 'text');
-
   // Formatear la fecha para mostrar
   const formatDateDisplay = (date: string) => {
     const today = new Date().toISOString().split('T')[0];

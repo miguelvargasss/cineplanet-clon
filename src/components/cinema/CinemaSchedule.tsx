@@ -17,20 +17,10 @@ export default function CinemaSchedule({
   onShowtimeSelect 
 }: CinemaScheduleProps) {
   const [isExpanded, setIsExpanded] = useState(isUserCinema);
-  const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
 
   const formatTime = (time: string) => {
     return time;
-  };
-
-  const getFormatBadgeColor = (format: string) => {
-    switch (format) {
-      case '3D': return '#2F64BA';
-      case 'IMAX': return '#E53E3E';
-      case 'VIP': return '#D4AF37';
-      default: return '#6B7280';
-    }
   };
 
   return (

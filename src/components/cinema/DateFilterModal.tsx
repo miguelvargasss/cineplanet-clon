@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, ScrollView, Modal } from 'react-native';
 import { ThemedText } from '../ui/ThemedText';
-import { useThemeColor } from '@/src/hooks/useThemeColor';
 import { IconSymbol } from '../ui/IconSymbol';
 
 interface DateFilterModalProps {
@@ -17,9 +16,6 @@ export default function DateFilterModal({
   onSelectDate, 
   onClose 
 }: DateFilterModalProps) {
-  const backgroundColor = useThemeColor({}, 'background');
-  const textColor = useThemeColor({}, 'text');
-
   // Generar las tres fechas: Hoy, Mañana, y el tercer día
   const generateDates = () => {
     const today = new Date();

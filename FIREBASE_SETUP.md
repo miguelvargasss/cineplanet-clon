@@ -98,6 +98,45 @@ service cloud.firestore {
       allow read: if true;
       allow write: if request.auth != null;
     }
+
+    // Tarjetas de pago - solo el usuario dueño puede acceder
+    match /paymentCards/{cardId} {
+      allow read, write: if request.auth != null &&
+                           request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null &&
+                     request.auth.uid == request.resource.data.userId;
+    }
+
+    // Asientos - lectura pública, escritura para usuarios autenticados
+    match /seats/{seatId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Snacks/Dulcería - lectura pública, escritura para usuarios autenticados
+    match /snacks/{snackId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /snackCategories/{categoryId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Horarios de funciones - lectura pública, escritura para usuarios autenticados
+    match /schedules/{scheduleId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Tickets/Boletos - solo el usuario dueño puede acceder
+    match /tickets/{ticketId} {
+      allow read, write: if request.auth != null &&
+                           request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null &&
+                     request.auth.uid == request.resource.data.userId;
+    }
   }
 }
 ```

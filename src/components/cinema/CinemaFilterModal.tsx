@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet, ScrollView, Modal } from 'react-native';
 import { ThemedText } from '../ui/ThemedText';
-import { useThemeColor } from '@/src/hooks/useThemeColor';
 import { IconSymbol } from '../ui/IconSymbol';
 import { limecinemas } from '@/src/data/cinemas';
 
@@ -31,9 +30,6 @@ export default function CinemaFilterModal({
   onSelectCinema, 
   onClose 
 }: CinemaFilterModalProps) {
-  const backgroundColor = useThemeColor({}, 'background');
-  const textColor = useThemeColor({}, 'text');
-
   // Combinar cines existentes con los adicionales
   const allCinemas = [
     ...limecinemas.map(cinema => ({ id: cinema.id, name: cinema.name })),

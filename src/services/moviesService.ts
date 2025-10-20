@@ -6,13 +6,12 @@ import {
   addDoc, 
   updateDoc, 
   deleteDoc, 
-  setDoc,
   query, 
   orderBy, 
   Timestamp 
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { MovieSchedule, Showtime } from '../types';
+import { MovieSchedule } from '../types';
 
 export interface Movie {
   id?: string;
@@ -77,7 +76,6 @@ export const getMovieById = async (movieId: string): Promise<Movie | null> => {
         }
       } catch {
         // Continuar buscando en la siguiente colección si hay error
-        console.log(`Movie not found in ${collectionName}, trying next collection...`);
       }
     }
     
@@ -154,9 +152,6 @@ export const getMoviesByCategory = async (category: 'nowPlaying' | 'comingSoon' 
     return movies;
   } catch (error) {
     console.error('Error getting movies by category:', error);
-    
-    // En caso de error, devolver array vacío 
-    console.log('Returning empty array due to Firebase error');
     return [];
   }
 };
@@ -194,7 +189,6 @@ export const addMovieToCategory = async (movieData: MovieInput, category: 'nowPl
     
     // Agregar película a la colección específica
     const docRef = await addDoc(collection(db, collectionName), movieDoc);
-    console.log(`Movie added to ${collectionName} with ID: ${docRef.id}`);
     
     return docRef.id;
   } catch (error) {
@@ -255,8 +249,6 @@ export const addSingleMovie = async (movieData: MovieInput, category: 'nowPlayin
 export const seedSampleMovies = async (category: 'nowPlaying' | 'comingSoon' | 'btsWeek' = 'nowPlaying'): Promise<void> => {
   try {
     // Solo agregar si específicamente se solicita
-    console.log(`Agregando película de muestra a la categoría: ${category}`);
-    
     const caminaOMuereMovie = {
       title: 'Camina o Muere',
       description: 'De la esperada adaptación de la primera novela escrita por el maestro del suspenso Stephen King, y bajo la dirección de Francis Lawrence —la mente detrás de las impactantes películas de Los Juegos del Hambre (En llamas, Sinsajo partes 1 y 2, y La balada de los pájaros cantores y serpientes)— llega THE LONG WALK, un thriller intenso, estremecedor y profundamente emocional. Una historia que no solo pondrá a prueba los límites de sus protagonistas, sino también los del espectador, con una pregunta inquietante: ¿Hasta dónde serías capaz de llegar?',
@@ -286,15 +278,8 @@ export const ensureMoviesExist = async (): Promise<void> => {
     const moviesRef = collection(db, 'movies');
     const moviesSnapshot = await getDocs(moviesRef);
     
-    console.log(`📊 Películas en "En Cartelera": ${moviesSnapshot.size}`);
-    
     // Si hay menos de 2 películas, agregar las películas básicas
     if (moviesSnapshot.size < 2) {
-      console.log('🎬 Agregando películas básicas...');
-      
-      // Importar el servicio simplificado
-      const { addMovieIfNotExists } = await import('./simpleMovieService');
-      
       // Agregar Avatar si no existe
       const avatarMovie = {
         title: "AVATAR: EL CAMINO DEL AGUA [2022]",
@@ -355,20 +340,15 @@ export const ensureMoviesExist = async (): Promise<void> => {
         ]
       };
       
-      await addMovieIfNotExists(avatarMovie, 'movies');
-      await addMovieIfNotExists(cronicasMovie, 'movies');
+      await addMovieSimple(avatarMovie, 'movies');
+      await addMovieSimple(cronicasMovie, 'movies');
     }
     
     // Verificar próximos estrenos
     const comingSoonRef = collection(db, 'moviesEstreno');
     const comingSoonSnapshot = await getDocs(comingSoonRef);
     
-    console.log(`🔜 Películas en "Próximos Estrenos": ${comingSoonSnapshot.size}`);
-    
     if (comingSoonSnapshot.size === 0) {
-      console.log('🔜 Agregando película de próximos estrenos...');
-      
-      const { addMovieIfNotExists } = await import('./simpleMovieService');
       
       const chainsawMovie = {
         title: "CHAINSAW MAN: REZE ARC",
@@ -399,7 +379,7 @@ export const ensureMoviesExist = async (): Promise<void> => {
         ]
       };
       
-      await addMovieIfNotExists(chainsawMovie, 'moviesEstreno');
+      await addMovieSimple(chainsawMovie, 'moviesEstreno');
     }
     
   } catch (error) {
@@ -411,15 +391,12 @@ export const ensureMoviesExist = async (): Promise<void> => {
 // 🚀 FUNCIÓN SIMPLIFICADA PARA AGREGAR PELÍCULAS
 export const addMovieSimple = async (movieData: any, category: 'movies' | 'moviesEstreno' = 'movies'): Promise<string | null> => {
   try {
-    console.log(`🎬 Agregando película: ${movieData.title} a ${category}`);
-    
     // Verificar si ya existe
     const collectionRef = collection(db, category);
     const snapshot = await getDocs(collectionRef);
     const exists = snapshot.docs.some(doc => doc.data().title === movieData.title);
     
     if (exists) {
-      console.log(`⚠️ La película "${movieData.title}" ya existe en ${category}`);
       return null;
     }
     
@@ -436,7 +413,6 @@ export const addMovieSimple = async (movieData: any, category: 'movies' | 'movie
     
     // Agregar a Firebase
     const docRef = await addDoc(collectionRef, movieDoc);
-    console.log(`✅ Película agregada exitosamente con ID: ${docRef.id}`);
     return docRef.id;
     
   } catch (error) {
