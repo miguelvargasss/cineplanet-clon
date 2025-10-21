@@ -97,7 +97,7 @@ const convertFirebaseSchedulesToUI = async (
   return schedules;
 };
 
-// 📖 FUNCIÓN PARA LEER HORARIOS REALES DESDE FIREBASE
+// FUNCIÓN PARA LEER HORARIOS REALES DESDE FIREBASE
 const getSchedulesFromFirebase = async (movieId: string): Promise<MovieSchedule[]> => {
   try {
     // Obtener la película desde Firebase

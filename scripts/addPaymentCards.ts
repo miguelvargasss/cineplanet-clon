@@ -49,40 +49,7 @@ async function clearPaymentCards() {
   }
 }
 
-/**
- * 💳 AGREGAR TARJETAS DE EJEMPLO
- */
-async function addSampleCards() {
-  try {
-    console.log('\n💳 Agregando tarjetas de ejemplo...');
-    
-    // Tarjeta de ejemplo para el usuario con DNI 61199456
-    const sampleCards = [
-      {
-        userId: 'XOtdM7XTZgZjMqZvLferQtY7qmP2', // UID del usuario Lorena Perez
-        userDni: '61199456',
-        cardType: 'visa', // visa, mastercard, amex, diners
-        cardNumber: '4532********9456', // Número enmascarado
-        cardLastFour: '9456',
-        cardholderName: 'MIGUEL VARGAS',
-        expiryMonth: '12',
-        expiryYear: '2027',
-        isDefault: true,
-        createdAt: Timestamp.fromDate(new Date()),
-        updatedAt: Timestamp.fromDate(new Date())
-      }
-    ];
-    
-    for (const card of sampleCards) {
-      const docRef = await addDoc(collection(db, 'paymentCards'), card);
-      console.log(`✅ Tarjeta agregada: ${card.cardType.toUpperCase()} ****${card.cardLastFour} (ID: ${docRef.id})`);
-    }
-    
-    console.log('\n🎉 ¡Tarjetas de ejemplo agregadas exitosamente!');
-  } catch (error) {
-    console.error('❌ Error agregando tarjetas:', error);
-  }
-}
+
 
 /**
  * 📊 MOSTRAR RESUMEN
@@ -125,7 +92,6 @@ async function main() {
   await clearPaymentCards();
   
   // Agregar tarjetas de ejemplo
-  await addSampleCards();
   
   // Mostrar resumen
   await showSummary();

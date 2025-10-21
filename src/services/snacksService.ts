@@ -92,7 +92,7 @@ export const getSnackCombosByCategory = async (categoryId: string): Promise<Snac
   }
 };
 
-// 🍿 OBTENER TODOS LOS COMBOS
+//  OBTENER TODOS LOS COMBOS
 export const getAllSnackCombos = async (): Promise<SnackCombo[]> => {
   try {
     // Consulta simple sin índice compuesto
