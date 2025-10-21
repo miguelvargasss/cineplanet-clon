@@ -1,5 +1,54 @@
 # Cineplanet - Configuración de Firebase
 
+## 🚨 SOLUCIÓN AL ERROR DE RESERVAS DE ASIENTOS
+
+**Si ves error: "Error obteniendo estadísticas de ocupación"** necesitas actualizar las reglas de Firebase.
+
+### 🔥 REGLAS DE FIRESTORE ACTUALIZADAS
+
+Ve a [Firebase Console](https://console.firebase.google.com/) → tu proyecto → Firestore Database → Rules:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Reglas para películas (existentes)
+    match /movies/{document} {
+      allow read, write: if true;
+    }
+
+    match /moviesEstreno/{document} {
+      allow read, write: if true;
+    }
+
+    match /moviesBts/{document} {
+      allow read, write: if true;
+    }
+
+    // ✨ NUEVAS REGLAS PARA SISTEMA DE RESERVAS
+    match /seatReservations/{document} {
+      allow read, write: if true; // Permite operaciones de reserva
+    }
+
+    match /tickets/{document} {
+      allow read, write: if true; // Permite operaciones de tickets
+    }
+
+    // Regla para test de conectividad
+    match /connectionTest/{document} {
+      allow read, write: if true;
+    }
+
+    // Reglas generales
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
+```
+
+**⚠️ IMPORTANTE:** Después de guardar las reglas, espera 1-2 minutos y reinicia tu app.
+
 ## 🎬 Implementación Completada
 
 Se ha implementado exitosamente Firebase en tu aplicación de Cineplanet con las siguientes funcionalidades:

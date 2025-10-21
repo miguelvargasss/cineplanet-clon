@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   ScrollView,
@@ -21,6 +21,10 @@ import { useAuth } from '@/src/contexts/AuthContext';
 import { Movie, getMovieById } from '@/src/services/moviesService';
 import { getSeatsByCinemaAndShowtime } from '@/src/services/seatsService';
 import { 
+  createTicketPurchaseWithReservation,
+  confirmTicketPurchaseWithSeats 
+} from '@/src/services/ticketService';
+import { 
   SnackCategory, 
   SnackCombo, 
   getSnackCategories, 
@@ -28,12 +32,9 @@ import {
 } from '@/src/services/snacksService';
 import {
   PaymentCard,
-  PaymentMethod,
-  PAYMENT_METHODS,
   getUserPaymentCards,
   addPaymentCard,
   deletePaymentCard,
-  setDefaultCard,
   validateCardNumber,
   validateCVV,
   validateExpiry,
@@ -120,14 +121,13 @@ export default function SeatSelectionScreen() {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [seats, setSeats] = useState<Seat[]>([]);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
-  const [purchasedSeats, setPurchasedSeats] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentTab, setCurrentTab] = useState<'seats' | 'tickets' | 'snacks' | 'payment'>('seats');
+  const [, setCurrentTab] = useState<'seats' | 'tickets' | 'snacks' | 'payment'>('seats');
   
   // Estados para la sección de entradas
   const [currentSection, setCurrentSection] = useState<'seats' | 'tickets' | 'snacks' | 'payment'>('seats');
   const [selectedTickets, setSelectedTickets] = useState<{[key: string]: number}>({});
-  const [totalPrice, setTotalPrice] = useState(0);
+  const [, setTotalPrice] = useState(0);
   
   // Estados del cronómetro
   const [timeLeft, setTimeLeft] = useState(210); // 3:30 minutos = 210 segundos
@@ -208,13 +208,51 @@ export default function SeatSelectionScreen() {
   const statusBarColor = '#051135ff';
   const headerColor = '#FFFFFF'; // Cambiado a blanco
 
+  // ✨ NUEVA: Función para refrescar solo los asientos desde Firebase (silenciosamente)
+  const refreshSeats = useCallback(async () => {
+    try {
+      if (cinemaId && showtimeId) {
+        const seatsData = await getSeatsByCinemaAndShowtime(cinemaId, showtimeId);
+        
+        // Mantener sincronizados los asientos con las selecciones actuales
+        const updatedSeats = seatsData.map(seat => {
+          const isSelected = selectedSeats.includes(seat.id);
+          return {
+            ...seat,
+            isSelected: isSelected
+          };
+        });
+        
+        setSeats(updatedSeats);
+      }
+    } catch (error) {
+      console.error('❌ [REFRESH] Error refrescando asientos:', error);
+    }
+  }, [cinemaId, showtimeId, selectedSeats]);
+
   useEffect(() => {
+    // Solo ejecutar una vez al montar el componente
     loadMovieAndSeats();
-    loadPurchasedSeats();
     // Cargar categorías de snacks al inicio
     loadSnackCategories();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // Solo ejecutar una vez
+
+  // Efecto separado para el auto-refresh de asientos
+  useEffect(() => {
+    // Configurar actualización automática de asientos cada 5 segundos
+    // SOLO cuando no hay selecciones activas para evitar que se desenmarquen
+    const seatUpdateInterval = setInterval(() => {
+      if (cinemaId && showtimeId && currentSection === 'seats' && selectedSeats.length === 0) {
+        refreshSeats();
+      }
+    }, 5000);
+
+    // Limpiar intervalo al desmontar componente
+    return () => {
+      clearInterval(seatUpdateInterval);
+    };
+  }, [cinemaId, showtimeId, currentSection, selectedSeats.length, refreshSeats]);
 
   // Cronómetro - cuenta regresiva
   useEffect(() => {
@@ -232,6 +270,32 @@ export default function SeatSelectionScreen() {
     return () => clearInterval(timer);
   }, []);
 
+  // Actualizar asientos automáticamente cuando se cambie a la sección de asientos
+  useEffect(() => {
+    if (currentSection === 'seats' && cinemaId && showtimeId && selectedSeats.length === 0) {
+      refreshSeats();
+    }
+  }, [currentSection, cinemaId, showtimeId, selectedSeats.length, refreshSeats]);
+
+  // Mantener sincronizados los estados de asientos y selecciones
+  useEffect(() => {
+    if (seats.length > 0) {
+      // Solo actualizar si hay diferencias para evitar re-renders innecesarios
+      const hasChanges = seats.some(seat => 
+        seat.isSelected !== selectedSeats.includes(seat.id)
+      );
+      
+      if (hasChanges) {
+        setSeats(prevSeats => 
+          prevSeats.map(seat => ({
+            ...seat,
+            isSelected: selectedSeats.includes(seat.id)
+          }))
+        );
+      }
+    }
+  }, [selectedSeats, seats]);
+
   // Formatear tiempo mm:ss
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -245,30 +309,7 @@ export default function SeatSelectionScreen() {
     router.back(); // Regresar a la pantalla anterior (detalles de película)
   };
 
-  // Cargar asientos comprados desde localStorage
-  const loadPurchasedSeats = () => {
-    try {
-      const storageKey = `purchased_seats_${movieId}_${showtimeId}`;
-      const stored = localStorage.getItem(storageKey);
-      if (stored) {
-        setPurchasedSeats(JSON.parse(stored));
-      }
-    } catch {
-      // No localStorage available (React Native)
-    }
-  };
 
-  // Guardar asientos comprados en localStorage
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const savePurchasedSeats = (seats: string[]) => {
-    try {
-      const storageKey = `purchased_seats_${movieId}_${showtimeId}`;
-      localStorage.setItem(storageKey, JSON.stringify(seats));
-      setPurchasedSeats(seats);
-    } catch {
-      // No localStorage available (React Native)
-    }
-  };
 
   const loadMovieAndSeats = async () => {
     try {
@@ -281,15 +322,9 @@ export default function SeatSelectionScreen() {
       }
 
       // Cargar asientos usando el servicio de asientos
-      if (cinemaId && showtimeId) {
-        const seatsData = await getSeatsByCinemaAndShowtime(cinemaId, showtimeId);
-        setSeats(seatsData);
-      } else {
-        // Fallback: generar asientos si no tenemos datos
-        generateSeats();
-      }
+      await refreshSeats();
     } catch (error) {
-      console.error('Error loading movie and seats:', error);
+      console.error('❌ [LOADING] Error loading movie and seats:', error);
       Alert.alert('Error', 'No se pudo cargar la información de la sala');
       // Fallback: generar asientos
       generateSeats();
@@ -612,79 +647,76 @@ export default function SeatSelectionScreen() {
   };
 
   const toggleSeatSelection = (seatId: string) => {
-    setSeats(prevSeats => {
-      return prevSeats.map(seat => {
-        if (seat.id === seatId && !seat.isOccupied && !purchasedSeats.includes(seatId)) {
-          const newIsSelected = !seat.isSelected;
+    // Encontrar el asiento para verificar si está ocupado
+    const seat = seats.find(s => s.id === seatId);
+    if (!seat || seat.isOccupied) {
+      return;
+    }
+
+    // Verificar el estado actual de selección
+    const isCurrentlySelected = selectedSeats.includes(seatId);
+    
+    if (isCurrentlySelected) {
+      // DESELECCIONAR: Remover de selectedSeats
+      const updatedSelectedSeats = selectedSeats.filter(id => id !== seatId);
+      
+      // Actualizar el estado principal PRIMERO
+      setSelectedSeats(updatedSelectedSeats);
+
+      // Si no quedan asientos seleccionados, limpiar todo
+      if (updatedSelectedSeats.length === 0) {
+        setCurrentSection('seats');
+        setCurrentTab('seats');
+        setSelectedTickets({});
+        setTotalPrice(0);
+      } else {
+        // Si hay menos asientos que entradas seleccionadas, ajustar entradas
+        const totalTickets = Object.values(selectedTickets).reduce((sum, count) => sum + count, 0);
+        if (totalTickets > updatedSelectedSeats.length) {
+          // Crear una nueva versión de tickets ajustada
+          const newTickets = { ...selectedTickets };
+          let excessTickets = totalTickets - updatedSelectedSeats.length;
           
-          // Actualizar lista de asientos seleccionados
-          if (newIsSelected) {
-            setSelectedSeats(prev => [...prev, seatId]);
-          } else {
-            setSelectedSeats(prev => {
-              const updated = prev.filter(id => id !== seatId);
-              
-              // Si no hay asientos seleccionados, regresar a la sección de asientos
-              if (updated.length === 0) {
-                setCurrentSection('seats');
-                setCurrentTab('seats');
-                // Limpiar selección de tickets
-                setSelectedTickets({});
-                setTotalPrice(0);
-              } else {
-                // Si hay menos asientos que entradas seleccionadas, ajustar entradas
-                const totalTickets = Object.values(selectedTickets).reduce((sum, count) => sum + count, 0);
-                if (totalTickets > updated.length) {
-                  // Reducir proporcionalmente las entradas seleccionadas
-                  const newTickets = { ...selectedTickets };
-                  let excessTickets = totalTickets - updated.length;
-                  
-                  // Reducir tickets empezando por los que tienen más cantidad
-                  const sortedTickets = Object.entries(newTickets)
-                    .filter(([_, count]) => count > 0)
-                    .sort(([, a], [, b]) => b - a);
-                  
-                  for (const [ticketId, count] of sortedTickets) {
-                    if (excessTickets <= 0) break;
-                    const reduceBy = Math.min(count, excessTickets);
-                    newTickets[ticketId] = count - reduceBy;
-                    if (newTickets[ticketId] === 0) {
-                      delete newTickets[ticketId];
-                    }
-                    excessTickets -= reduceBy;
-                  }
-                  
-                  setSelectedTickets(newTickets);
-                  
-                  // Recalcular precio
-                  const newTotalPrice = Object.entries(newTickets).reduce((total, [id, count]) => {
-                    const ticket = ticketTypes.find(t => t.id === id);
-                    return total + (ticket ? ticket.price * count : 0);
-                  }, 0);
-                  setTotalPrice(newTotalPrice);
-                }
-              }
-              
-              return updated;
-            });
+          // Reducir tickets empezando por los que tienen más cantidad
+          const sortedTickets = Object.entries(newTickets)
+            .filter(([_, count]) => count > 0)
+            .sort(([, a], [, b]) => b - a);
+          
+          for (const [ticketId, count] of sortedTickets) {
+            if (excessTickets <= 0) break;
+            const reduceBy = Math.min(count, excessTickets);
+            newTickets[ticketId] = count - reduceBy;
+            if (newTickets[ticketId] === 0) {
+              delete newTickets[ticketId];
+            }
+            excessTickets -= reduceBy;
           }
           
-          return { ...seat, isSelected: newIsSelected };
+          setSelectedTickets(newTickets);
+          
+          // Recalcular precio
+          const newTotalPrice = Object.entries(newTickets).reduce((total, [id, count]) => {
+            const ticket = ticketTypes.find(t => t.id === id);
+            return total + (ticket ? ticket.price * count : 0);
+          }, 0);
+          setTotalPrice(newTotalPrice);
         }
-        return seat;
-      });
-    });
+      }
+    } else {
+      // SELECCIONAR: Agregar a selectedSeats
+      const updatedSelectedSeats = [...selectedSeats, seatId];
+      
+      // Actualizar el estado principal
+      setSelectedSeats(updatedSelectedSeats);
+    }
   };
 
   const getSeatColor = (seat: Seat) => {
-    if (purchasedSeats.includes(seat.id)) {
-      return '#DC2626'; // Rojo para asientos comprados
-    }
     if (seat.isSelected) {
       return '#3B82F6'; // Azul para asientos seleccionados
     }
     if (seat.isOccupied) {
-      return '#9CA3AF'; // Gris para asientos ocupados
+      return '#DC2626'; // Rojo para asientos ocupados (según leyenda original)
     }
     return '#FFFFFF'; // Blanco para asientos disponibles
   };
@@ -707,7 +739,7 @@ export default function SeatSelectionScreen() {
                 index === 8 && styles.seatGapAfter, // Gap después del asiento 9
               ]}
               onPress={() => toggleSeatSelection(seat.id)}
-              disabled={seat.isOccupied || purchasedSeats.includes(seat.id)}
+              disabled={seat.isOccupied}
             >
               {seat.isWheelchair ? (
                 <IconSymbol name="wheelchair" size={12} color="#FFFFFF" />
@@ -788,14 +820,7 @@ export default function SeatSelectionScreen() {
     return `${prefix}******${lastFour}`;
   };
 
-  const handleSetDefaultCard = async (cardId: string) => {
-    if (!userProfile?.uid) return;
-    
-    const success = await setDefaultCard(userProfile.uid, cardId);
-    if (success) {
-      loadSavedCards(); // Recargar lista para ver los cambios
-    }
-  };
+
 
   // Funciones para limpiar otros formularios
   const clearOtherPaymentMethods = (activeMethod: 'credit-card' | 'app-agora' | 'yape') => {
@@ -884,12 +909,33 @@ export default function SeatSelectionScreen() {
       setIsProcessingPayment(true);
 
       try {
+        if (!userProfile?.uid) {
+          throw new Error('Usuario no autenticado');
+        }
+
+        // ✨ NUEVO: Crear reserva de asientos con el sistema integrado
+        const { ticketId, reservationIds } = await createTicketPurchaseWithReservation(
+          userProfile.uid,
+          movieId,
+          showtimeId,
+          cinemaId,
+          selectedSeats,
+          getTotalCartPrice() // Usar función que calcula precio total
+        );
+
+        console.log('✅ Reserva creada:', { ticketId, reservationIds });
+
         // Simular procesamiento de pago
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // Guardar asientos comprados
-        const newPurchasedSeats = [...purchasedSeats, ...selectedSeats];
-        savePurchasedSeats(newPurchasedSeats);
+        // ✨ NUEVO: Confirmar la compra (esto marca los asientos como comprados permanentemente)
+        await confirmTicketPurchaseWithSeats(ticketId, reservationIds);
+
+        console.log('✅ Compra confirmada - asientos marcados como ocupados');
+
+        // Recargar asientos para mostrar los nuevos estados
+        await refreshSeats();
+        setSelectedSeats([]); // Limpiar selección
 
         // Mostrar pantalla de confirmación
         setShowPaymentSuccess(true);
@@ -970,8 +1016,33 @@ export default function SeatSelectionScreen() {
       setIsProcessingPayment(true);
 
       try {
+        if (!userProfile?.uid) {
+          throw new Error('Usuario no autenticado');
+        }
+
+        // ✨ NUEVO: Crear reserva de asientos con el sistema integrado
+        const { ticketId, reservationIds } = await createTicketPurchaseWithReservation(
+          userProfile.uid,
+          movieId,
+          showtimeId,
+          cinemaId,
+          selectedSeats,
+          getTotalCartPrice()
+        );
+
+        console.log('✅ Reserva creada:', { ticketId, reservationIds });
+
         // Simular procesamiento de pago
         await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // ✨ NUEVO: Confirmar la compra (esto marca los asientos como comprados permanentemente)
+        await confirmTicketPurchaseWithSeats(ticketId, reservationIds);
+
+        console.log('✅ Compra confirmada - asientos marcados como ocupados');
+
+        // Recargar asientos para mostrar los nuevos estados
+        await refreshSeats();
+        setSelectedSeats([]); // Limpiar selección
 
         // Guardar tarjeta si se marcó la opción (solo para tarjeta de crédito)
         if (activeMethod === 'credit-card' && creditCardData.saveForFuture && userProfile?.uid) {
@@ -1483,7 +1554,7 @@ export default function SeatSelectionScreen() {
                     <View style={styles.emptyState}>
                       <ThemedText style={styles.emptyStateIcon}>💳</ThemedText>
                       <ThemedText style={styles.emptyStateText}>
-                        Todavía no tienes agregada una tarjeta a la lista. Para ingresar una nueva, selecciona la opción "Agregar Tarjeta". Completa los datos y presiona "Aceptar".
+                        Todavía no tienes agregada una tarjeta a la lista. Para ingresar una nueva, selecciona la opción &quot;Agregar Tarjeta&quot;. Completa los datos y presiona &quot;Aceptar&quot;.
                       </ThemedText>
                       <ThemedText style={styles.emptyStateNote}>
                         * No se hacen cambios ni devoluciones

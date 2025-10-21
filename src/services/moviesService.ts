@@ -222,12 +222,33 @@ export const updateMovie = async (movieId: string, movieData: Partial<MovieInput
   }
 };
 
-// Eliminar película
+// Eliminar película con cleanup completo de reservas
 export const deleteMovie = async (movieId: string): Promise<void> => {
   try {
-    // Eliminar documento de Firestore
-    const movieRef = doc(db, 'movies', movieId);
-    await deleteDoc(movieRef);
+    // ✨ NUEVO: Limpiar todas las reservas asociadas antes de eliminar la película
+    const { cleanupMovieReservations } = await import('./reservationService');
+    await cleanupMovieReservations(movieId);
+    
+    // Buscar en todas las colecciones posibles y eliminar la película
+    const collections = ['movies', 'moviesEstreno', 'moviesBts'];
+    
+    for (const collectionName of collections) {
+      try {
+        const movieRef = doc(db, collectionName, movieId);
+        const movieDoc = await getDoc(movieRef);
+        
+        if (movieDoc.exists()) {
+          await deleteDoc(movieRef);
+          console.log(`Película ${movieId} eliminada de ${collectionName}`);
+          break; // Salir del loop una vez que se encuentra y elimina
+        }
+      } catch (error) {
+        console.warn(`Error buscando película en ${collectionName}:`, error);
+        // Continuar con la siguiente colección
+      }
+    }
+    
+    console.log(`✅ Película ${movieId} y todas sus reservas eliminadas exitosamente`);
   } catch (error) {
     console.error('Error deleting movie:', error);
     throw error;

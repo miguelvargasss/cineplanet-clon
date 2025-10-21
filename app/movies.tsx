@@ -14,6 +14,7 @@ import { ThemedText } from '@/src/components/ui/ThemedText';
 import { useThemeColor } from '@/src/hooks/useThemeColor';
 import { IconSymbol } from '@/src/components/ui/IconSymbol';
 import { MovieCard } from '@/src/components/movies/MovieCard';
+import { UserProfileModal } from '@/src/components/ui/UserProfileModal';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { Movie, getMoviesByCategory, ensureMoviesExist } from '@/src/services/moviesService';
 import { logoutUser } from '@/src/services/authService';
@@ -32,6 +33,7 @@ export default function MoviesScreen() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showUserModal, setShowUserModal] = useState(false);
 
   const { user, userProfile } = useAuth();
 
@@ -90,10 +92,18 @@ export default function MoviesScreen() {
 
   const handleLogout = async () => {
     try {
+      // Cerrar el modal primero
+      setShowUserModal(false);
+      
+      console.log('🚪 Iniciando proceso de logout...');
       await logoutUser();
+      
+      console.log('🔄 Redirigiendo a pantalla de login...');
       router.replace('/(auth)/login');
     } catch (error) {
-      console.error('Error logging out:', error);
+      console.error('❌ Error logging out:', error);
+      // Reabrir el modal si hay error
+      setShowUserModal(true);
     }
   };
 
@@ -102,6 +112,15 @@ export default function MoviesScreen() {
       return `${userProfile.firstName.charAt(0)}${userProfile.lastName.charAt(0)}`.toUpperCase();
     }
     return user?.email?.charAt(0).toUpperCase() || 'U';
+  };
+
+  const handleUserProfilePress = () => {
+    setShowUserModal(true);
+  };
+
+  const handleNavigateToMyPurchases = () => {
+    setShowUserModal(false);
+    router.push('/my-purchases');
   };
 
   return (
@@ -123,7 +142,7 @@ export default function MoviesScreen() {
           <TouchableOpacity style={styles.headerIconButton}>
             <IconSymbol name="magnifyingglass" size={20} color="#FFFFFF" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.profileButton} onPress={handleLogout}>
+          <TouchableOpacity style={styles.profileButton} onPress={handleUserProfilePress}>
             <ThemedText style={styles.profileText}>{getUserInitials()}</ThemedText>
           </TouchableOpacity>
           <TouchableOpacity style={styles.helpButton}>
@@ -260,6 +279,15 @@ export default function MoviesScreen() {
         </TouchableOpacity>
       </View>
     </SafeAreaView>
+
+    {/* Modal de Perfil de Usuario */}
+    <UserProfileModal
+      visible={showUserModal}
+      onClose={() => setShowUserModal(false)}
+      onNavigateToMyPurchases={handleNavigateToMyPurchases}
+      onLogout={handleLogout}
+      userInitials={getUserInitials()}
+    />
     </ProtectedRoute>
   );
 }

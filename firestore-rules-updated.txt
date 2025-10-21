@@ -1,0 +1,133 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ==========================================
+    // USUARIOS - Lectura pública (para login), escritura solo el dueño
+    // ==========================================
+    match /users/{userId} {
+      // Permitir lectura para login (buscar por DNI)
+      allow read: if true;
+      // Solo el usuario dueño puede modificar sus propios datos
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ==========================================
+    // PELÍCULAS Y CONTENIDO PÚBLICO
+    // ==========================================
+    match /movies/{movieId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /moviesEstreno/{movieId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /schedules/{scheduleId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ==========================================
+    // ✨ RESERVAS DE ASIENTOS - NUEVAS REGLAS
+    // ==========================================
+    match /seatReservations/{reservationId} {
+      // Todos pueden leer para ver qué asientos están ocupados
+      allow read: if true;
+      
+      // Solo usuarios autenticados pueden crear reservas
+      allow create: if request.auth != null && 
+                       request.resource.data.userId == request.auth.uid;
+      
+      // Solo el dueño de la reserva puede modificar/eliminar
+      allow update, delete: if request.auth != null && 
+                               resource.data.userId == request.auth.uid;
+    }
+
+    // ==========================================
+    // TARJETAS DE PAGO - SOLO EL DUEÑO VE SUS TARJETAS
+    // ==========================================
+    match /paymentCards/{cardId} {
+      // Solo puede leer tarjetas donde userId == su propio UID
+      allow read: if request.auth != null && 
+                     resource.data.userId == request.auth.uid;
+      
+      // Solo puede escribir tarjetas donde userId == su propio UID
+      allow write: if request.auth != null && 
+                      resource.data.userId == request.auth.uid;
+      
+      // Solo puede crear tarjetas con su propio userId
+      allow create: if request.auth != null && 
+                       request.resource.data.userId == request.auth.uid;
+    }
+
+    // ==========================================
+    // TICKETS/BOLETOS - ACTUALIZADO PARA NUEVO SISTEMA
+    // ==========================================
+    match /tickets/{ticketId} {
+      // Solo puede leer tickets donde userId == su propio UID
+      allow read: if request.auth != null && 
+                     resource.data.userId == request.auth.uid;
+      
+      // Solo puede escribir tickets donde userId == su propio UID
+      allow write: if request.auth != null && 
+                      resource.data.userId == request.auth.uid;
+      
+      // Solo puede crear tickets con su propio userId
+      allow create: if request.auth != null && 
+                       request.resource.data.userId == request.auth.uid;
+    }
+
+    // ==========================================
+    // HISTORIAL DE COMPRAS - SOLO EL DUEÑO VE SUS COMPRAS
+    // ==========================================
+    match /purchases/{purchaseId} {
+      // Solo puede leer compras donde userId == su propio UID
+      allow read: if request.auth != null && 
+                     resource.data.userId == request.auth.uid;
+      
+      // Solo puede escribir compras donde userId == su propio UID
+      allow write: if request.auth != null && 
+                      resource.data.userId == request.auth.uid;
+      
+      // Solo puede crear compras con su propio userId
+      allow create: if request.auth != null && 
+                       request.resource.data.userId == request.auth.uid;
+    }
+
+    // ==========================================
+    // SNACKS Y DULCERÍA - PÚBLICO
+    // ==========================================
+    match /snacks/{snackId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /snackCategories/{categoryId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /snackCombos/{comboId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ==========================================
+    // ASIENTOS - PÚBLICO
+    // ==========================================
+    match /seats/{seatId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ==========================================
+    // ✨ TEST DE CONECTIVIDAD - TEMPORAL
+    // ==========================================
+    match /connectionTest/{document} {
+      allow read, write: if true;
+    }
+  }
+}

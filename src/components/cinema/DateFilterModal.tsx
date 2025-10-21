@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, ScrollView, Modal } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { ThemedText } from '../ui/ThemedText';
 import { IconSymbol } from '../ui/IconSymbol';
 

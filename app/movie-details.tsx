@@ -55,6 +55,20 @@ export default function MovieDetailsScreen() {
   const statusBarColor = '#051135ff'; // Azul muy oscuro para status bar
   const headerColor = '#2f64baff'; // Azul más claro para header
 
+  const loadSchedules = useCallback(async (movieId: string) => {
+    try {
+      setLoadingSchedules(true);
+      
+      // Usar el cine seleccionado por el usuario
+      const userSchedule = await getMovieScheduleForCinema(movieId, selectedCinema);
+      setUserCinemaSchedule(userSchedule);
+    } catch (err) {
+      console.error('❌ ERROR: Error loading schedules:', err);
+    } finally {
+      setLoadingSchedules(false);
+    }
+  }, [selectedCinema]);
+
   const loadMovie = useCallback(async () => {
     try {
       setLoading(true);
@@ -81,22 +95,9 @@ export default function MovieDetailsScreen() {
     } finally {
       setLoading(false);
     }
-  }, [params.id, selectedTab]);
+  }, [params.id, selectedTab, loadSchedules]);
 
-  const loadSchedules = useCallback(async (movieId: string) => {
-    try {
-      setLoadingSchedules(true);
-      
-      // Usar el cine seleccionado por el usuario
-      const userSchedule = await getMovieScheduleForCinema(movieId, selectedCinema);
-      setUserCinemaSchedule(userSchedule);
-    } catch (err) {
-      console.error('❌ ERROR: Error loading schedules:', err);
-    } finally {
-      setLoadingSchedules(false);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCinema]);
+
 
   const handleShowtimeSelect = async (showtime: Showtime) => {
     if (!user) {

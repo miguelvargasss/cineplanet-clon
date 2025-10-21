@@ -13,8 +13,7 @@ import {
   deleteDoc, 
   query, 
   where,
-  Timestamp,
-  orderBy 
+  Timestamp
 } from 'firebase/firestore';
 import { db } from '@/src/config/firebase';
 

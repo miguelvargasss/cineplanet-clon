@@ -57,6 +57,29 @@ export interface MovieSchedule {
   showtimes: Showtime[];
 }
 
+// Tipos para asientos
+export interface Seat {
+  id: string;
+  row: string;
+  number: number;
+  isOccupied: boolean;
+  isWheelchair: boolean;
+  isSelected: boolean;
+}
+
+// Tipos para reservas de asientos
+export interface SeatReservation {
+  id: string;
+  seatId: string; // Formato: "row+number" (ej: "G7")
+  showtimeId: string;
+  movieId: string;
+  cinemaId: string;
+  userId: string;
+  reservedAt: Date;
+  status: 'reserved' | 'purchased' | 'expired';
+  expiresAt?: Date; // Para reservas temporales
+}
+
 // Tipos para compra de entradas
 export interface TicketPurchase {
   id?: string;
@@ -65,6 +88,7 @@ export interface TicketPurchase {
   showtimeId: string;
   cinemaId: string;
   seats: string[];
+  seatReservations: string[]; // IDs de las reservas de asientos
   totalPrice: number;
   purchaseDate: Date;
   status: 'pending' | 'confirmed' | 'cancelled';
