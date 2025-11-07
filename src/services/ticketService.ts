@@ -1,33 +1,33 @@
-// 🎫 SERVICIO PARA HORARIOS Y COMPRA DE ENTRADAS
+// SERVICIO PARA HORARIOS Y COMPRA DE ENTRADAS
 // 
-// ✅ IMPLEMENTACIÓN ACTUALIZADA (Oct 2025)
 // - Lee horarios reales desde Firebase Firestore
 // - Convierte estructura simple de BD a estructura compleja de UI
 // - Fallback a horarios hardcodeados si no hay datos en Firebase
-// - ✨ NUEVO: Integración completa con sistema de reservas de asientos
+// - NUEVO: Integración completa con sistema de reservas de asientos
 //
 // FLUJO:
 // 1. Buscar película en Firebase por ID
 // 2. Extraer schedules de la película
 // 3. Convertir { cinemaId, showtimes[] } a { cinemaId, cinemaName, Showtime[] }
 // 4. Si no hay datos, usar horarios por defecto
-// 5. ✨ Integrar disponibilidad real de asientos desde reservas
+// 5. Integrar disponibilidad real de asientos desde reservas
 
 import { 
-  collection, 
-  doc, 
-  getDocs, 
-  addDoc, 
-  updateDoc, 
-  query, 
+  collection,
+  addDoc,
+  query,
   where,
-  Timestamp 
+  getDocs,
+  Timestamp,
+  doc,
+  updateDoc
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { MovieSchedule, Showtime, TicketPurchase } from '../types';
+import { MovieSchedule, Showtime, TicketPurchase, Ticket, TicketItem, SnackItem } from '../types';
 import { getCinemaById } from '../data/cinemas';
 import { getShowtimeOccupancyStats } from './reservationService';
 import { getMovieById } from './moviesService';
+import { generatePurchaseCode, generateRandomSala, getCurrentPeruDateTime } from '../utils/purchaseUtils';
 
 // 🔄 MAPEO DE IDS: Firebase -> Aplicación
 const mapCinemaIdFromFirebase = (firebaseId: string): string => {
@@ -479,6 +479,252 @@ export const cancelTicketPurchase = async (purchaseId: string): Promise<void> =>
     });
   } catch (error) {
     console.error('Error cancelling ticket purchase:', error);
+    throw error;
+  }
+};
+
+// ========================================
+// NUEVAS FUNCIONES PARA TICKETS CON QR
+// ========================================
+
+/**
+ * Crear ticket con código QR después de una compra exitosa
+ * @param userId - ID del usuario que realiza la compra
+ * @param movieId - ID de la película
+ * @param movieTitle - Título de la película
+ * @param cinema - Nombre del cine
+ * @param seats - Array de asientos seleccionados (ej: ["A1", "A2"])
+ * @param totalAmount - Monto total de la compra
+ * @returns Ticket creado con código QR
+ */
+export const createTicketWithQR = async (
+  userId: string,
+  movieId: string,
+  movieTitle: string,
+  userName: string,
+  userEmail: string,
+  cinema: string,
+  seats: string[],
+  totalAmount: number,
+  tickets?: TicketItem[],
+  snacks?: SnackItem[]
+): Promise<Ticket> => {
+  try {
+    // Generar código de compra único
+    const purchaseCode = generatePurchaseCode();
+    
+    // Generar sala aleatoria
+    const sala = generateRandomSala();
+    
+    // Obtener fecha y hora de Perú
+    const { date, time } = getCurrentPeruDateTime();
+
+    // Crear datos para el QR (JSON stringificado)
+    const qrData = JSON.stringify({
+      purchaseCode,
+      movie: movieTitle,
+      cinema,
+      date,
+      time,
+      sala,
+      seats: seats.join(', ')
+    });
+
+    // Datos del ticket
+    const ticketData = {
+      userId,
+      movieId,
+      purchaseCode,
+      movieTitle,
+      userName,
+      userEmail,
+      cinema,
+      purchaseDate: date,
+      purchaseTime: time,
+      sala,
+      seats,
+      totalAmount,
+      createdAt: Timestamp.now(),
+      qrData,
+      tickets: tickets || [],
+      snacks: snacks || [],
+      visits: 0,
+      points: 0
+    };
+
+    // Guardar en Firestore
+    const docRef = await addDoc(collection(db, 'tickets'), ticketData);
+
+    console.log('✅ Ticket creado exitosamente:', docRef.id);
+
+    return {
+      id: docRef.id,
+      ...ticketData,
+      createdAt: new Date()
+    };
+  } catch (error) {
+    console.error('❌ Error creando ticket con QR:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtener todos los tickets de un usuario
+ * @param userId - ID del usuario
+ * @returns Array de tickets del usuario ordenados por fecha de creación (más recientes primero)
+ */
+export const getUserTickets = async (userId: string): Promise<Ticket[]> => {
+  try {
+    const q = query(
+      collection(db, 'tickets'),
+      where('userId', '==', userId)
+    );
+
+    const querySnapshot = await getDocs(q);
+    const tickets: Ticket[] = [];
+
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      
+      // Validar que el documento tenga los campos necesarios
+      if (!data.purchaseCode || !data.movieTitle) {
+        console.warn(`⚠️ Ticket incompleto ignorado: ${doc.id}`);
+        return; // Saltar este documento
+      }
+
+      tickets.push({
+        id: doc.id,
+        userId: data.userId,
+        movieId: data.movieId,
+        purchaseCode: data.purchaseCode,
+        movieTitle: data.movieTitle,
+        userName: data.userName || 'Usuario',
+        userEmail: data.userEmail || '',
+        cinema: data.cinema || 'Cineplanet',
+        purchaseDate: data.purchaseDate || new Date().toLocaleDateString('es-PE'),
+        purchaseTime: data.purchaseTime || '00:00',
+        sala: data.sala || 'Sala 1',
+        seats: data.seats || [],
+        totalAmount: data.totalAmount || 0,
+        createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
+        qrData: data.qrData || '{}',
+        tickets: data.tickets || [],
+        snacks: data.snacks || [],
+        visits: data.visits || 0,
+        points: data.points || 0
+      });
+    });
+
+    // Ordenar por fecha de creación (más recientes primero)
+    tickets.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    console.log(`✅ Se encontraron ${tickets.length} tickets para el usuario`);
+    return tickets;
+  } catch (error) {
+    console.error('❌ Error obteniendo tickets del usuario:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtener un ticket específico por su ID
+ * @param ticketId - ID del ticket
+ * @returns Ticket encontrado o null si no existe
+ */
+export const getTicketById = async (ticketId: string): Promise<Ticket | null> => {
+  try {
+    const ticketDoc = await getDocs(query(collection(db, 'tickets'), where('__name__', '==', ticketId)));
+    
+    if (ticketDoc.empty) {
+      console.warn(`⚠️ No se encontró el ticket con ID: ${ticketId}`);
+      return null;
+    }
+
+    const ticketData = ticketDoc.docs[0].data();
+    
+    // Validar que tenga los campos necesarios
+    if (!ticketData.purchaseCode || !ticketData.movieTitle) {
+      console.error(`❌ Ticket con datos incompletos: ${ticketId}`);
+      return null;
+    }
+    
+    return {
+      id: ticketDoc.docs[0].id,
+      userId: ticketData.userId,
+      movieId: ticketData.movieId,
+      purchaseCode: ticketData.purchaseCode,
+      movieTitle: ticketData.movieTitle,
+      userName: ticketData.userName || 'Usuario',
+      userEmail: ticketData.userEmail || '',
+      cinema: ticketData.cinema || 'Cineplanet',
+      purchaseDate: ticketData.purchaseDate || new Date().toLocaleDateString('es-PE'),
+      purchaseTime: ticketData.purchaseTime || '00:00',
+      sala: ticketData.sala || 'Sala 1',
+      seats: ticketData.seats || [],
+      totalAmount: ticketData.totalAmount || 0,
+      createdAt: ticketData.createdAt ? ticketData.createdAt.toDate() : new Date(),
+      qrData: ticketData.qrData || '{}',
+      tickets: ticketData.tickets || [],
+      snacks: ticketData.snacks || [],
+      visits: ticketData.visits || 0,
+      points: ticketData.points || 0
+    };
+  } catch (error) {
+    console.error('❌ Error obteniendo ticket por ID:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtener un ticket por su código de compra
+ * @param purchaseCode - Código de compra (ej: "WLKXP5R")
+ * @returns Ticket encontrado o null si no existe
+ */
+export const getTicketByPurchaseCode = async (purchaseCode: string): Promise<Ticket | null> => {
+  try {
+    const q = query(
+      collection(db, 'tickets'),
+      where('purchaseCode', '==', purchaseCode)
+    );
+
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      console.warn(`⚠️ No se encontró el ticket con código: ${purchaseCode}`);
+      return null;
+    }
+
+    const ticketData = querySnapshot.docs[0].data();
+    
+    // Validar que tenga los campos necesarios
+    if (!ticketData.purchaseCode || !ticketData.movieTitle) {
+      console.error(`❌ Ticket con datos incompletos para código: ${purchaseCode}`);
+      return null;
+    }
+    
+    return {
+      id: querySnapshot.docs[0].id,
+      userId: ticketData.userId,
+      movieId: ticketData.movieId,
+      purchaseCode: ticketData.purchaseCode,
+      movieTitle: ticketData.movieTitle,
+      userName: ticketData.userName || 'Usuario',
+      userEmail: ticketData.userEmail || '',
+      cinema: ticketData.cinema || 'Cineplanet',
+      purchaseDate: ticketData.purchaseDate || new Date().toLocaleDateString('es-PE'),
+      purchaseTime: ticketData.purchaseTime || '00:00',
+      sala: ticketData.sala || 'Sala 1',
+      seats: ticketData.seats || [],
+      totalAmount: ticketData.totalAmount || 0,
+      createdAt: ticketData.createdAt ? ticketData.createdAt.toDate() : new Date(),
+      qrData: ticketData.qrData || '{}',
+      tickets: ticketData.tickets || [],
+      snacks: ticketData.snacks || [],
+      visits: ticketData.visits || 0,
+      points: ticketData.points || 0
+    };
+  } catch (error) {
+    console.error('❌ Error obteniendo ticket por código de compra:', error);
     throw error;
   }
 };

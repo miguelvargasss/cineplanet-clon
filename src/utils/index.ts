@@ -1,4 +1,4 @@
-// 🔧 UTILIDADES GENERALES DE LA APLICACIÓN CINEPLANET
+// UTILIDADES GENERALES DE LA APLICACIÓN CINEPLANET
 
 // Validaciones
 export const validateEmail = (email: string): boolean => {

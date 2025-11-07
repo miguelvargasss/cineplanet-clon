@@ -21,6 +21,7 @@ import {
   releaseSeats
 } from './seatsService';
 import { cleanupExpiredReservations } from './cleanupService';
+import { createTicketWithQR } from './ticketService';
 
 // Crear una reserva completa (asientos + información de la compra)
 export const createReservation = async (
@@ -248,6 +249,81 @@ export const getShowtimeOccupancyStats = async (showtimeId: string): Promise<{
       availableSeats: 120,
       occupancyPercentage: 0
     };
+  }
+};
+
+// ========================================
+// NUEVA FUNCIÓN: Crear reserva completa con ticket QR
+// ========================================
+
+/**
+ * Crear reserva completa con ticket QR después del pago exitoso
+ * Esta función combina la reserva de asientos con la generación del ticket QR
+ * 
+ * @param userId - ID del usuario
+ * @param movieId - ID de la película
+ * @param movieTitle - Título de la película
+ * @param showtimeId - ID de la función
+ * @param cinemaId - ID del cine
+ * @param cinemaName - Nombre del cine
+ * @param seatIds - Array de IDs de asientos seleccionados
+ * @param totalPrice - Precio total
+ * @param userName - Nombre del usuario
+ * @param userEmail - Email del usuario
+ * @param tickets - Array de tickets seleccionados
+ * @param snacks - Array de snacks seleccionados
+ * @returns ID del ticket creado
+ */
+export const createReservationWithTicketQR = async (
+  userId: string,
+  movieId: string,
+  movieTitle: string,
+  showtimeId: string,
+  cinemaId: string,
+  cinemaName: string,
+  seatIds: string[],
+  totalPrice: number,
+  userName: string,
+  userEmail: string,
+  tickets?: any[],
+  snacks?: any[]
+): Promise<string> => {
+  try {
+    // 1. Limpiar reservas expiradas primero
+    await cleanupExpiredReservations();
+    
+    // 2. Reservar asientos y crear ticket pendiente
+    const { reservationIds, ticketId } = await createReservation(
+      userId,
+      movieId,
+      showtimeId,
+      cinemaId,
+      seatIds,
+      totalPrice
+    );
+
+    // 3. Confirmar la reserva de asientos (cambiar a "purchased")
+    await confirmReservation(ticketId, reservationIds);
+
+    // 4. Crear el ticket con código QR
+    const ticket = await createTicketWithQR(
+      userId,
+      movieId,
+      movieTitle,
+      userName,
+      userEmail,
+      cinemaName,
+      seatIds,
+      totalPrice,
+      tickets,
+      snacks
+    );
+
+    console.log('✅ Reserva completa creada con ticket QR:', ticket.id);
+    return ticket.id;
+  } catch (error) {
+    console.error('❌ Error creando reserva con ticket QR:', error);
+    throw error;
   }
 };
 

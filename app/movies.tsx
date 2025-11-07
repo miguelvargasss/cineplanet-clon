@@ -95,13 +95,13 @@ export default function MoviesScreen() {
       // Cerrar el modal primero
       setShowUserModal(false);
       
-      console.log('🚪 Iniciando proceso de logout...');
+      console.log(' Iniciando proceso de logout...');
       await logoutUser();
       
-      console.log('🔄 Redirigiendo a pantalla de login...');
+      console.log(' Redirigiendo a pantalla de login...');
       router.replace('/(auth)/login');
     } catch (error) {
-      console.error('❌ Error logging out:', error);
+      console.error(' Error logging out:', error);
       // Reabrir el modal si hay error
       setShowUserModal(true);
     }

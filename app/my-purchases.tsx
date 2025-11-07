@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -13,246 +14,182 @@ import { ThemedText } from '../src/components/ui/ThemedText';
 import { ThemedView } from '../src/components/ui/ThemedView';
 import { IconSymbol } from '../src/components/ui/IconSymbol';
 import { useAuth } from '../src/contexts/AuthContext';
-import { getUserTicketPurchases } from '../src/services/ticketService';
-import { getMovieById } from '../src/services/moviesService';
-import { getCinemaById } from '../src/data/cinemas';
-import { TicketPurchase } from '../src/types';
-
-interface PurchaseWithDetails extends TicketPurchase {
-  movieTitle: string;
-  cinemaName: string;
-  showtimeDate: string;
-  showtimeTime: string;
-  points: number;
-  accumulatedVisits: number;
-}
+import { getUserTickets } from '../src/services/ticketService';
+import { Ticket } from '../src/types';
 
 export default function MyPurchasesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { userProfile } = useAuth();
-  const [purchases, setPurchases] = useState<PurchaseWithDetails[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const loadUserPurchases = useCallback(async () => {
+  const loadUserTickets = useCallback(async () => {
     if (!userProfile?.uid) return;
 
     try {
       setLoading(true);
-      
-      const userPurchases = await getUserTicketPurchases(userProfile.uid);
-      
-      // Contar vistas acumuladas por película
-      // IMPORTANTE: 1 compra = 1 vista (sin importar cuántos asientos)
-      const movieVisitCounts: { [movieId: string]: number } = {};
-      userPurchases.forEach(purchase => {
-        if (purchase.status === 'confirmed') {
-          // Cada compra confirmada = 1 vista adicional para esa película
-          movieVisitCounts[purchase.movieId] = (movieVisitCounts[purchase.movieId] || 0) + 1;
-        }
-      });
-      
-      // Mapear las compras con información adicional
-      const purchasesWithDetails: PurchaseWithDetails[] = await Promise.all(
-        userPurchases.map(async (purchase, index) => {
-          // Obtener información de la película
-          let movieTitle = 'Película';
-          try {
-            const movie = await getMovieById(purchase.movieId);
-            movieTitle = movie?.title || 'Película Desconocida';
-          } catch (error) {
-            console.log('❌ [PURCHASES] Error obteniendo película:', error);
-          }
-
-          // Obtener información del cine
-          let cinemaName = 'CINEPLANET';
-          try {
-            const cinema = getCinemaById(purchase.cinemaId);
-            cinemaName = cinema?.name || purchase.cinemaId.toUpperCase();
-          } catch (error) {
-            console.log('❌ [PURCHASES] Error obteniendo cine:', error);
-          }
-
-          // Calcular puntos basado en el tipo de entrada
-          const points = calculatePurchasePoints(purchase);
-          
-          // Obtener vistas acumuladas para esta película
-          const accumulatedVisits = movieVisitCounts[purchase.movieId] || 0;
-          
-          return {
-            ...purchase,
-            movieTitle,
-            cinemaName,
-            showtimeDate: formatPurchaseDate(purchase.purchaseDate),
-            showtimeTime: formatPurchaseTime(purchase.purchaseDate),
-            points,
-            accumulatedVisits,
-          };
-        })
-      );
-
-      // Ordenar por fecha de compra (más recientes primero)
-      purchasesWithDetails.sort((a, b) => 
-        new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime()
-      );
-
-      setPurchases(purchasesWithDetails);
+      const userTickets = await getUserTickets(userProfile.uid);
+      setTickets(userTickets);
+      console.log(`✅ Cargados ${userTickets.length} tickets`);
     } catch (error) {
-      console.error('❌ [PURCHASES] Error cargando compras del usuario:', error);
+      console.error('❌ Error cargando tickets:', error);
     } finally {
       setLoading(false);
     }
-  }, [userProfile?.uid]);
+  }, [userProfile]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadUserTickets();
+    setRefreshing(false);
+  }, [loadUserTickets]);
 
   useEffect(() => {
-    loadUserPurchases();
-  }, [loadUserPurchases]);
+    loadUserTickets();
+  }, [loadUserTickets]);
 
-  const calculatePurchasePoints = (purchase: TicketPurchase): number => {
-    // ✨ SISTEMA DE PUNTOS CINEPLANET:
-    // 
-    // EJEMPLO DE TU CASO:
-    // - 4 butacas compradas:
-    //   * 2 "Entrada Socio Clásico OL" (15.50 cada una) = 2 × 5 puntos = 10 puntos
-    //   * 2 "50% Promo Amex 2025" (12.00 cada una) = 2 × 0 puntos = 0 puntos
-    //   * TOTAL: 10 puntos
-    //   * VISITAS: 1 (porque es una sola compra)
-    //
-    // REGLAS:
-    // - Solo "Entrada Socio Clásico OL" otorga puntos (5 puntos por entrada)
-    // - Cualquier otra entrada NO otorga puntos
-    // - 1 compra = 1 vista (sin importar cuántos asientos)
-    
-    const seatsCount = purchase.seats.length;
-    const pricePerSeat = purchase.totalPrice / seatsCount;
-    
-    // Si el precio por asiento coincide con "Entrada Socio Clásico OL" (15.50 soles)
-    // O está en el rango de entradas de beneficio (14-17 soles para tolerancia)
-    if (pricePerSeat >= 14 && pricePerSeat <= 17) {
-      // Asumimos que todas las entradas en este rango de precio son "Entrada Socio Clásico OL"
-      return seatsCount * 5; // 5 puntos por entrada
-    }
-    
-    // Para cualquier otro tipo de entrada (50% Promo Amex, General, etc.)
-    return 0; // No dan puntos
-  };
-
-  const formatPurchaseDate = (date: Date): string => {
-    return date.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
+  const handleTicketPress = (ticket: Ticket) => {
+    router.push({
+      pathname: '/purchase-confirmation' as any,
+      params: {
+        ticketId: ticket.id,
+        userName: userProfile?.email || 'Usuario'
+      }
     });
   };
 
-  const formatPurchaseTime = (date: Date): string => {
-    return date.toLocaleTimeString('es-ES', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const handleBackPress = () => {
+    router.back();
   };
 
-  const renderPurchaseItem = (purchase: PurchaseWithDetails) => {
+  if (loading) {
     return (
-      <View style={styles.purchaseItem}>
-        {/* Contenido principal */}
-        <View style={styles.purchaseContent}>
-          {/* Icono de película */}
-          <View style={styles.movieIconContainer}>
-            <IconSymbol name="film" size={24} color="#1E40AF" />
-          </View>
-
-          {/* Información de la compra */}
-          <View style={styles.purchaseInfo}>
-            {/* Título de la película */}
-            <ThemedText style={styles.movieTitle}>
-              {purchase.movieTitle.toUpperCase()}
-            </ThemedText>
-
-            {/* Fecha y hora */}
-            <ThemedText style={styles.purchaseDateTime}>
-              {purchase.showtimeDate} | {purchase.showtimeTime}
-            </ThemedText>
-
-            {/* Cinema */}
-            <ThemedText style={styles.cinemaName}>
-              {purchase.cinemaName.toUpperCase()}
-            </ThemedText>
-
-            {/* Puntos y Visitas en la misma línea */}
-            <View style={styles.statsRow}>
-              <ThemedText style={styles.statsText}>
-                Puntos: <ThemedText style={[
-                  styles.statsValue,
-                  { color: purchase.points > 0 ? '#1E40AF' : '#6B7280' }
-                ]}>
-                  {purchase.points > 0 ? purchase.points.toFixed(2) : '0.00'}
-                </ThemedText>
-              </ThemedText>
-              
-              <ThemedText style={styles.statsText}>
-                Visitas Acumuladas: <ThemedText style={styles.statsValue}>
-                  {purchase.accumulatedVisits}
-                </ThemedText>
-              </ThemedText>
-            </View>
-          </View>
+      <ThemedView style={styles.container}>
+        <StatusBar style="light" />
+        <View style={[styles.statusBar, { paddingTop: insets.top }]} />
+        
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
+            <IconSymbol name="chevron.left" size={24} color="#fff" />
+          </TouchableOpacity>
+          <ThemedText style={styles.headerTitle}>Mis Compras</ThemedText>
+          <View style={styles.backButton} />
         </View>
-      </View>
+
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#1E40AF" />
+          <ThemedText style={styles.loadingText}>Cargando tickets...</ThemedText>
+        </View>
+      </ThemedView>
     );
-  };
+  }
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style="light" backgroundColor="#1E40AF" />
+      <StatusBar style="light" />
+      <View style={[styles.statusBar, { paddingTop: insets.top }]} />
       
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top }]}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <IconSymbol name="chevron.left" size={24} color="#FFFFFF" />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
+          <IconSymbol name="chevron.left" size={24} color="#fff" />
         </TouchableOpacity>
-        
         <ThemedText style={styles.headerTitle}>Mis Compras</ThemedText>
-        
-        {/* Placeholder para balancear el header */}
-        <View style={styles.headerPlaceholder} />
+        <View style={styles.backButton} />
       </View>
 
-      {/* Contenido */}
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#1E40AF"
+          />
+        }
       >
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#1E40AF" />
-            <ThemedText style={styles.loadingText}>
-              Cargando tus compras...
-            </ThemedText>
-          </View>
-        ) : purchases.length > 0 ? (
-          <>
-            {purchases.map((purchase, index) => (
-              <View key={purchase.id}>
-                {renderPurchaseItem(purchase)}
-                {index < purchases.length - 1 && <View style={styles.separator} />}
-              </View>
-            ))}
-          </>
-        ) : (
+        {tickets.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <IconSymbol name="film" size={64} color="#9CA3AF" />
+            <IconSymbol name="ticket" size={64} color="#9CA3AF" />
             <ThemedText style={styles.emptyTitle}>
-              No tienes compras aún
+              No tienes compras realizadas
             </ThemedText>
             <ThemedText style={styles.emptySubtitle}>
-              Cuando realices tu primera compra de entradas, aparecerá aquí.
+              Tus tickets aparecerán aquí después de realizar una compra
             </ThemedText>
           </View>
+        ) : (
+          <>
+            <ThemedText style={styles.sectionTitle}>
+              {tickets.length} {tickets.length === 1 ? 'Ticket' : 'Tickets'}
+            </ThemedText>
+            
+            {tickets.map((ticket) => (
+              <TouchableOpacity
+                key={ticket.id}
+                style={styles.ticketCard}
+                onPress={() => handleTicketPress(ticket)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.ticketHeader}>
+                  <View style={styles.ticketIconContainer}>
+                    <IconSymbol name="film" size={20} color="#1E40AF" />
+                  </View>
+                  <View style={styles.ticketHeaderInfo}>
+                    <ThemedText style={styles.ticketMovieTitle}>
+                      {ticket.movieTitle}
+                    </ThemedText>
+                    <ThemedText style={styles.ticketCode}>
+                      Código: {ticket.purchaseCode}
+                    </ThemedText>
+                  </View>
+                  <IconSymbol name="chevron.right" size={20} color="#9CA3AF" />
+                </View>
+
+                <View style={styles.ticketDivider} />
+
+                <View style={styles.ticketDetails}>
+                  <View style={styles.ticketDetailRow}>
+                    <IconSymbol name="location" size={16} color="#6B7280" />
+                    <ThemedText style={styles.ticketDetailText}>
+                      {ticket.cinema}
+                    </ThemedText>
+                  </View>
+
+                  <View style={styles.ticketDetailRow}>
+                    <IconSymbol name="calendar" size={16} color="#6B7280" />
+                    <ThemedText style={styles.ticketDetailText}>
+                      {ticket.purchaseDate} • {ticket.purchaseTime}
+                    </ThemedText>
+                  </View>
+
+                  <View style={styles.ticketDetailRow}>
+                    <IconSymbol name="ticket" size={16} color="#6B7280" />
+                    <ThemedText style={styles.ticketDetailText}>
+                      {ticket.sala} • Asientos: {ticket.seats.join(', ')}
+                    </ThemedText>
+                  </View>
+
+                  <View style={styles.ticketDetailRow}>
+                    <IconSymbol name="dollarsign.circle" size={16} color="#6B7280" />
+                    <ThemedText style={styles.ticketDetailText}>
+                      S/ {ticket.totalAmount.toFixed(2)}
+                    </ThemedText>
+                  </View>
+                </View>
+
+                <View style={styles.ticketFooter}>
+                  <ThemedText style={styles.viewQRText}>
+                    Toca para ver tu código QR
+                  </ThemedText>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </>
         )}
       </ScrollView>
     </ThemedView>
@@ -262,7 +199,10 @@ export default function MyPurchasesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F9FAFB',
+  },
+  statusBar: {
+    backgroundColor: '#1E40AF',
   },
   header: {
     backgroundColor: '#1E40AF',
@@ -270,19 +210,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingVertical: 16,
   },
   backButton: {
-    padding: 8,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '600',
     color: '#FFFFFF',
-    textAlign: 'center',
   },
-  headerPlaceholder: {
-    width: 40,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#6B7280',
   },
   scrollView: {
     flex: 1,
@@ -290,85 +240,98 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 100,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#6B7280',
-    marginTop: 16,
-  },
   emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 100,
+    justifyContent: 'center',
+    paddingVertical: 80,
+    paddingHorizontal: 32,
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '600',
-    color: '#374151',
+    color: '#111827',
     marginTop: 16,
     textAlign: 'center',
   },
   emptySubtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#6B7280',
     marginTop: 8,
     textAlign: 'center',
-    lineHeight: 24,
-  },
-  purchaseItem: {
-    backgroundColor: '#FFFFFF',
-  },
-  purchaseContent: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  movieIconContainer: {
-    marginRight: 16,
-    justifyContent: 'flex-start',
-    paddingTop: 2,
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#E5E7EB',
-    marginHorizontal: 16,
-  },
-  purchaseInfo: {
-    flex: 1,
-  },
-  movieTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1E40AF',
-    marginBottom: 4,
     lineHeight: 20,
   },
-  purchaseDateTime: {
-    fontSize: 14,
-    color: '#374151',
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 16,
+  },
+  ticketCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  ticketHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  ticketIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  ticketHeaderInfo: {
+    flex: 1,
+  },
+  ticketMovieTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
     marginBottom: 4,
   },
-  cinemaName: {
-    fontSize: 14,
+  ticketCode: {
+    fontSize: 13,
     fontWeight: '600',
     color: '#1E40AF',
-    marginBottom: 8,
   },
-  statsRow: {
+  ticketDivider: {
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    marginBottom: 12,
+  },
+  ticketDetails: {
+    gap: 10,
+  },
+  ticketDetailRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
   },
-  statsText: {
+  ticketDetailText: {
     fontSize: 14,
     color: '#374151',
   },
-  statsValue: {
-    fontWeight: '600',
+  ticketFooter: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    alignItems: 'center',
+  },
+  viewQRText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#1E40AF',
   },
 });

@@ -1,4 +1,4 @@
-// 🎭 TIPOS GLOBALES DE LA APLICACIÓN CINEPLANET
+// TIPOS GLOBALES DE LA APLICACIÓN CINEPLANET
 
 // Tipos de usuario y autenticación
 export interface User {
@@ -99,7 +99,6 @@ export interface LoginForm {
   memberNumber: string;
   password: string;
 }
-
 export interface RegisterForm {
   firstName: string;
   lastName: string;
@@ -136,3 +135,55 @@ export type AuthStackParamList = {
   'login': undefined;
   'register': undefined;
 };
+
+
+export interface PurchaseData {
+  purchaseCode: string;
+  movieTitle: string;
+  moviePoster?: string;
+  userName: string;
+  userEmail: string;
+  cinema: string;
+  purchaseDate: string;
+  purchaseTime: string;
+  sala: string;
+  seats: string[];
+  totalAmount: number;
+  userId: string;
+  tickets?: TicketItem[];
+  snacks?: SnackItem[];
+}
+
+export interface TicketItem {
+  type: string;
+  quantity: number;
+  price: number;
+}
+
+export interface SnackItem {
+  name: string;
+  quantity: number;
+  price: number;
+}
+
+export interface Ticket {
+  id: string;
+  userId: string;
+  movieId: string;
+  purchaseCode: string;
+  movieTitle: string;
+  userName: string;
+  userEmail: string;
+  cinema: string;
+  purchaseDate: string;
+  purchaseTime: string;
+  sala: string;
+  seats: string[];
+  totalAmount: number;
+  createdAt: Date;
+  qrData: string;
+  tickets?: TicketItem[];
+  snacks?: SnackItem[];
+  visits: number;
+  points: number;
+}

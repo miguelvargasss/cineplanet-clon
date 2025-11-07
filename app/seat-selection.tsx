@@ -20,10 +20,7 @@ import { IconSymbol } from '@/src/components/ui/IconSymbol';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { Movie, getMovieById } from '@/src/services/moviesService';
 import { getSeatsByCinemaAndShowtime } from '@/src/services/seatsService';
-import { 
-  createTicketPurchaseWithReservation,
-  confirmTicketPurchaseWithSeats 
-} from '@/src/services/ticketService';
+import { createReservationWithTicketQR } from '@/src/services/reservationService';
 import { 
   SnackCategory, 
   SnackCombo, 
@@ -890,6 +887,41 @@ export default function SeatSelectionScreen() {
     return { completedMethods, activeMethod };
   };
 
+  // Funciones auxiliares para preparar datos de compra
+  const prepareTicketsData = () => {
+    const ticketsData: any[] = [];
+    Object.entries(selectedTickets).forEach(([id, count]) => {
+      const ticket = ticketTypes.find(t => t.id === id);
+      if (ticket && count > 0) {
+        ticketsData.push({
+          type: ticket.name,
+          quantity: count,
+          price: ticket.price
+        });
+      }
+    });
+    return ticketsData;
+  };
+
+  const prepareSnacksData = () => {
+    const snacksData: any[] = [];
+    Object.entries(selectedSnacks).forEach(([comboId, count]) => {
+      // Buscar el combo en todas las categorías
+      for (const categoryId in snackCombos) {
+        const combo = snackCombos[categoryId].find(c => c.id === comboId);
+        if (combo && count > 0) {
+          snacksData.push({
+            name: combo.name,
+            quantity: count,
+            price: combo.price
+          });
+          break;
+        }
+      }
+    });
+    return snacksData;
+  };
+
   // Función para validar y procesar el pago
   const handlePayment = async () => {
     if (isProcessingPayment) return;
@@ -913,38 +945,51 @@ export default function SeatSelectionScreen() {
           throw new Error('Usuario no autenticado');
         }
 
-        // ✨ NUEVO: Crear reserva de asientos con el sistema integrado
-        const { ticketId, reservationIds } = await createTicketPurchaseWithReservation(
+        if (!movie) {
+          throw new Error('Información de película no disponible');
+        }
+
+        // ✨ NUEVO: Crear reserva completa con ticket QR
+        const ticketsData = prepareTicketsData();
+        const snacksData = prepareSnacksData();
+        
+        const ticketId = await createReservationWithTicketQR(
           userProfile.uid,
           movieId,
+          movie.title,
           showtimeId,
           cinemaId,
+          params.cinemaName as string || 'Cineplanet',
           selectedSeats,
-          getTotalCartPrice() // Usar función que calcula precio total
+          getTotalCartPrice(),
+          `${userProfile.firstName || ''} ${userProfile.lastName || ''}`.trim() || 'Usuario',
+          userProfile.email || '',
+          ticketsData,
+          snacksData
         );
 
-        console.log('✅ Reserva creada:', { ticketId, reservationIds });
+        console.log('✅ Reserva y ticket creados:', ticketId);
 
         // Simular procesamiento de pago
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // ✨ NUEVO: Confirmar la compra (esto marca los asientos como comprados permanentemente)
-        await confirmTicketPurchaseWithSeats(ticketId, reservationIds);
-
-        console.log('✅ Compra confirmada - asientos marcados como ocupados');
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
         // Recargar asientos para mostrar los nuevos estados
         await refreshSeats();
         setSelectedSeats([]); // Limpiar selección
 
-        // Mostrar pantalla de confirmación
+        // ✨ MOSTRAR PANTALLA DE ÉXITO POR 4 SEGUNDOS
         setShowPaymentSuccess(true);
         
-        // Redirigir a películas después de 5 segundos
+        // ✨ DESPUÉS DE 4 SEGUNDOS, NAVEGAR A PANTALLA DE CONFIRMACIÓN CON QR
         setTimeout(() => {
           setShowPaymentSuccess(false);
-          router.push('/movies'); // Redirigir a la pantalla de películas
-        }, 5000);
+          router.push({
+            pathname: '/purchase-confirmation' as any,
+            params: {
+              ticketId: ticketId
+            }
+          });
+        }, 4000);
       } catch (error) {
         console.error('Error processing payment:', error);
         Alert.alert('Error', 'No se pudo procesar el pago. Por favor intenta nuevamente.');
@@ -1020,25 +1065,33 @@ export default function SeatSelectionScreen() {
           throw new Error('Usuario no autenticado');
         }
 
-        // ✨ NUEVO: Crear reserva de asientos con el sistema integrado
-        const { ticketId, reservationIds } = await createTicketPurchaseWithReservation(
+        if (!movie) {
+          throw new Error('Información de película no disponible');
+        }
+
+        // ✨ NUEVO: Crear reserva completa con ticket QR
+        const ticketsData = prepareTicketsData();
+        const snacksData = prepareSnacksData();
+        
+        const ticketId = await createReservationWithTicketQR(
           userProfile.uid,
           movieId,
+          movie.title,
           showtimeId,
           cinemaId,
+          params.cinemaName as string || 'Cineplanet',
           selectedSeats,
-          getTotalCartPrice()
+          getTotalCartPrice(),
+          `${userProfile.firstName || ''} ${userProfile.lastName || ''}`.trim() || 'Usuario',
+          userProfile.email || '',
+          ticketsData,
+          snacksData
         );
 
-        console.log('✅ Reserva creada:', { ticketId, reservationIds });
+        console.log('✅ Reserva y ticket creados:', ticketId);
 
         // Simular procesamiento de pago
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // ✨ NUEVO: Confirmar la compra (esto marca los asientos como comprados permanentemente)
-        await confirmTicketPurchaseWithSeats(ticketId, reservationIds);
-
-        console.log('✅ Compra confirmada - asientos marcados como ocupados');
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
         // Recargar asientos para mostrar los nuevos estados
         await refreshSeats();
@@ -1064,14 +1117,19 @@ export default function SeatSelectionScreen() {
           }
         }
 
-        // Mostrar pantalla de confirmación
+        // ✨ MOSTRAR PANTALLA DE ÉXITO POR 4 SEGUNDOS
         setShowPaymentSuccess(true);
         
-        // Redirigir a películas después de 5 segundos
+        // ✨ DESPUÉS DE 4 SEGUNDOS, NAVEGAR A PANTALLA DE CONFIRMACIÓN CON QR
         setTimeout(() => {
           setShowPaymentSuccess(false);
-          router.push('/movies'); // Redirigir a la pantalla de películas
-        }, 5000);
+          router.push({
+            pathname: '/purchase-confirmation' as any,
+            params: {
+              ticketId: ticketId
+            }
+          });
+        }, 4000);
       } catch (error) {
         console.error('Error processing payment:', error);
         Alert.alert('Error', 'No se pudo procesar el pago. Por favor intenta nuevamente.');
@@ -1099,15 +1157,13 @@ export default function SeatSelectionScreen() {
       <View style={styles.paymentSuccessContainer}>
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
         <View style={styles.paymentSuccessContent}>
-          <View style={styles.checkIconContainer}>
-            <View style={styles.checkIcon}>
-              <ThemedText style={styles.checkMark}>✓</ThemedText>
+          <View style={styles.successCheckmark}>
+            <View style={styles.checkmarkCircle}>
+              <ThemedText style={styles.checkmarkIcon}>✓</ThemedText>
             </View>
           </View>
-          <ThemedText style={styles.paymentSuccessTitle}>¡Gracias por tu compra!</ThemedText>
-          <ThemedText style={styles.paymentSuccessSubtitle}>
-            Te enviaremos la confirmación {'\n'}a tu correo electrónico
-          </ThemedText>
+          <ThemedText style={styles.successTitle}>Compra Exitosa</ThemedText>
+          <ThemedText style={styles.successMessage}>¡Gracias por su compra!</ThemedText>
         </View>
       </View>
     );
@@ -2231,8 +2287,8 @@ export default function SeatSelectionScreen() {
       >
         <View style={styles.successModalOverlay}>
           <View style={styles.successModalContainer}>
-            <View style={styles.successCheckCircle}>
-              <ThemedText style={styles.successCheckMark}>✓</ThemedText>
+            <View style={styles.checkmarkCircle}>
+              <ThemedText style={styles.checkmarkIcon}>✓</ThemedText>
             </View>
             <ThemedText style={styles.successTitle}>¡Pago Exitoso!</ThemedText>
             <ThemedText style={styles.successMessage}>
@@ -2240,7 +2296,7 @@ export default function SeatSelectionScreen() {
             </ThemedText>
             {creditCardData.saveForFuture && (
               <ThemedText style={styles.successCardSaved}>
-                💳 Tarjeta guardada para futuras compras
+                 Tarjeta guardada para futuras compras
               </ThemedText>
             )}
             <TouchableOpacity
@@ -3579,33 +3635,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 280,
   },
-  successCheckCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#10B981',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  successCheckMark: {
-    fontSize: 48,
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-  },
-  successTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  successMessage: {
-    fontSize: 16,
-    color: '#6B7280',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
   successCardSaved: {
     fontSize: 14,
     color: '#10B981',
@@ -3638,34 +3667,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 32,
   },
-  checkIconContainer: {
-    marginBottom: 32,
+  successCheckmark: {
+    marginBottom: 40,
+    alignItems: 'center',
   },
-  checkIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#10B981',
+  checkmarkCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 4,
+    borderColor: '#86BC25',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkMark: {
-    fontSize: 40,
-    color: '#FFFFFF',
+  checkmarkIcon: {
+    fontSize: 60,
+    color: '#86BC25',
     fontWeight: 'bold',
   },
-  paymentSuccessTitle: {
-    fontSize: 24,
+  successTitle: {
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#1F2937',
-    marginBottom: 16,
+    color: '#003DA5',
+    marginBottom: 12,
     textAlign: 'center',
   },
-  paymentSuccessSubtitle: {
-    fontSize: 16,
-    color: '#6B7280',
+  successMessage: {
+    fontSize: 18,
+    color: '#003DA5',
     textAlign: 'center',
-    lineHeight: 24,
+    fontWeight: '500',
   },
 
   // Estilos para nuevas tarjetas guardadas (sin fondo)
