@@ -137,55 +137,31 @@ export default function MyPurchasesScreen() {
               >
                 <View style={styles.ticketHeader}>
                   <View style={styles.ticketIconContainer}>
-                    <IconSymbol name="film" size={20} color="#1E40AF" />
+                    <IconSymbol name="ticket" size={24} color="#1E40AF" />
                   </View>
-                  <View style={styles.ticketHeaderInfo}>
+                  <View style={styles.ticketInfo}>
                     <ThemedText style={styles.ticketMovieTitle}>
                       {ticket.movieTitle}
                     </ThemedText>
-                    <ThemedText style={styles.ticketCode}>
-                      Código: {ticket.purchaseCode}
+                    <ThemedText style={styles.ticketDateTime}>
+                      {ticket.purchaseDate} | {ticket.purchaseTime}
                     </ThemedText>
-                  </View>
-                  <IconSymbol name="chevron.right" size={20} color="#9CA3AF" />
-                </View>
-
-                <View style={styles.ticketDivider} />
-
-                <View style={styles.ticketDetails}>
-                  <View style={styles.ticketDetailRow}>
-                    <IconSymbol name="location" size={16} color="#6B7280" />
-                    <ThemedText style={styles.ticketDetailText}>
-                      {ticket.cinema}
+                    <ThemedText style={styles.ticketCinema}>
+                      {ticket.cinema.toUpperCase()}
                     </ThemedText>
+                    <View style={styles.ticketStatsRow}>
+                      <View style={styles.ticketStat}>
+                        <ThemedText style={styles.ticketStatLabel}>Puntos:</ThemedText>
+                        <ThemedText style={styles.ticketStatValue}>
+                          {ticket.seats.length}
+                        </ThemedText>
+                      </View>
+                      <View style={styles.ticketStat}>
+                        <ThemedText style={styles.ticketStatLabel}>Visitas Acumuladas:</ThemedText>
+                        <ThemedText style={styles.ticketStatValue}>1</ThemedText>
+                      </View>
+                    </View>
                   </View>
-
-                  <View style={styles.ticketDetailRow}>
-                    <IconSymbol name="calendar" size={16} color="#6B7280" />
-                    <ThemedText style={styles.ticketDetailText}>
-                      {ticket.purchaseDate} • {ticket.purchaseTime}
-                    </ThemedText>
-                  </View>
-
-                  <View style={styles.ticketDetailRow}>
-                    <IconSymbol name="ticket" size={16} color="#6B7280" />
-                    <ThemedText style={styles.ticketDetailText}>
-                      {ticket.sala} • Asientos: {ticket.seats.join(', ')}
-                    </ThemedText>
-                  </View>
-
-                  <View style={styles.ticketDetailRow}>
-                    <IconSymbol name="dollarsign.circle" size={16} color="#6B7280" />
-                    <ThemedText style={styles.ticketDetailText}>
-                      S/ {ticket.totalAmount.toFixed(2)}
-                    </ThemedText>
-                  </View>
-                </View>
-
-                <View style={styles.ticketFooter}>
-                  <ThemedText style={styles.viewQRText}>
-                    Toca para ver tu código QR
-                  </ThemedText>
                 </View>
               </TouchableOpacity>
             ))}
@@ -268,70 +244,66 @@ const styles = StyleSheet.create({
   },
   ticketCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: 8,
+    padding: 14,
+    marginBottom: 14,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
     elevation: 2,
+    borderLeftWidth: 4,
+    borderLeftColor: '#1E40AF',
   },
   ticketHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
+    alignItems: 'flex-start',
   },
   ticketIconContainer: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     borderRadius: 8,
     backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  ticketHeaderInfo: {
+  ticketInfo: {
     flex: 1,
   },
   ticketMovieTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: '700',
+    color: '#1E293B',
     marginBottom: 4,
   },
-  ticketCode: {
+  ticketDateTime: {
     fontSize: 13,
-    fontWeight: '600',
+    color: '#334155',
+    marginBottom: 3,
+  },
+  ticketCinema: {
+    fontSize: 13,
+    fontWeight: '700',
     color: '#1E40AF',
+    marginBottom: 8,
   },
-  ticketDivider: {
-    height: 1,
-    backgroundColor: '#E5E7EB',
-    marginBottom: 12,
-  },
-  ticketDetails: {
-    gap: 10,
-  },
-  ticketDetailRow: {
+  ticketStatsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
+    gap: 12,
   },
-  ticketDetailText: {
-    fontSize: 14,
-    color: '#374151',
+  ticketStat: {
+    flex: 1,
   },
-  ticketFooter: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    alignItems: 'center',
+  ticketStatLabel: {
+    fontSize: 11,
+    color: '#475569',
+    marginBottom: 1,
   },
-  viewQRText: {
-    fontSize: 13,
-    fontWeight: '500',
+  ticketStatValue: {
+    fontSize: 15,
+    fontWeight: '700',
     color: '#1E40AF',
   },
 });
